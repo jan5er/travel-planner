@@ -1,0 +1,167 @@
+import { start } from 'repl'
+import { Trip, MEMBER_COLORS } from '../models/Trip.js'
+const User = require('../models/User')
+const crypto = require('crypto')
+
+exports.createTrip = async (req, res) => {
+    try {
+        const { title } = req.body
+        if (!title) {
+            return res.status(400).json({ message: 'Title is required' });
+        }
+
+        const color = Trip.getRandomUniqueColor([]);
+        const trip = await Trip.create({
+            title,
+            createdBy: req.user._id,
+            members: [{ user: req.user._id, color }],
+        });
+
+        res.status(201).json(trip);
+    } catch (err) {
+        console.error('Error creating trip:', err)
+        res.status(500).json({ message: 'Server error' })
+    }
+}
+
+exports.getTrips = async (req, res) => {
+    try {
+        const trips = await Trip.find({ 
+            $or: [{ createdBy: req.user._id }, { 'members.user': req.user._id }] // Najdemo vsa potovanje, kjer je uporabnik ali owner ali pa member
+        })
+        .populate('createdBy', 'username name avatar')
+        .populate('members.user', 'username name avatar')
+        .sort({ startDate: 1 }) // Najprej potovanja, ki se začnejo najprej
+
+        res.json(trips);
+    } catch (err) {
+        console.error('Error fetching trips:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+}
+
+exports.getTrip = async (req, res) => {
+    try {
+        const trip = await Trip.findById(req.params.id)
+            .populate('createdBy', 'username name avatar')
+            .populate('members.user', 'username name avatar')
+        if (!trip) return res.status(404).json({ message: 'Trip not found' });
+
+        const isMember = trip.members.some(m => m.user._id.toString() === req.user.id);
+        if (!isMember) return res.status(403).json({ message: 'Not authorized' });
+
+        res.json(trip);
+    } catch (err) {
+        console.error('Error fetching trip:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+}
+
+exports.updateTrip = async (req, res) => {
+    try {
+        const trip = await Trip.findById(req.params.id);
+        if (!trip) return res.status(404).json({ message: 'Trip not found' });
+
+        const isMember = trip.members.some(m => m.user.toString() === req.user.id);
+        if (!isMember) return res.status(403).json({ message: 'Not authorized' });
+
+        const allowedEdits = ['title', 'description', 'coverImage', 'startDate', 'endDate'];
+        allowedEdits.forEach(field => {
+            if (req.body[field] !== undefined) {
+                trip[field] = req.body[field];
+            }
+        });
+
+        await trip.save();
+        res.json(trip);
+    } catch (err) {
+        console.error('Error updating trip:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+}
+
+exports.addMember = async (req, res) => {
+    try {
+        const { usernameOrEmail } = req.body
+        const trip = await Trip.findById(req.params.id);
+        if (!trip) return res.status(404).json({ message: 'Trip not found' });
+
+        const isMember = trip.members.some(m => m.user.toString() === req.user.id);
+        if (!isMember) return res.status(403).json({ message: 'Not authorized' });
+
+        const userToAdd = await User.findOne({
+            $or: [{ email: usernameOrEmail }, { username: usernameOrEmail }]
+        });
+        if (!userToAdd) return res.status(404).json({ message: 'User not found' });
+        
+        const alreadyMember = trip.members.some(m => m.user.toString() === userToAdd._id.toString());
+        if (alreadyMember) return res.status(400).json({ message: 'User is already a member' });
+
+        const color = Trip.getRandomUniqueColor(trip.members);
+        trip.members.push({ user: userToAdd._id, color });
+        await trip.save();
+        await trip.populate('members.user', 'username name avatar');
+        res.json(trip);
+    } catch (err) {
+        console.error('Error adding member:', err);
+        res.status(500).json({ message: 'Server error' });
+    } 
+}
+
+exports.removeMember = async (req, res) => {
+    try {
+        const trip = await Trip.findById(req.params.id);
+        if (!trip) return res.status(404).json({ message: 'Trip not found' });
+
+        const isMember = trip.members.some(m => m.user.toString() === req.user.id);
+        if (!isMember) return res.status(403).json({ message: 'Not authorized' });
+
+        if (req.params.memberId === trip.createdBy.toString()) {
+            return res.status(400).json({ message: 'Cannot remove the trip creator' });
+        }
+
+        trip.members = trip.members.filter(m => m.user.toString() !== req.params.memberId);
+        await trip.save();
+        res.json(trip);
+    } catch (err) {
+        console.error('Error removing member:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+}
+
+exports.generateInvite = async (req, res) => {
+    try {
+        const trip = await Trip.findById(req.params.id);
+        if (!trip) return res.status(404).json({ message: 'Trip not found' });
+
+        const isMember = trip.members.some(m => m.user.toString() === req.user.id);
+        if (!isMember) return res.status(403).json({ message: 'Not authorized' });
+
+        trip.inviteCode = crypto.randomBytes(8).toString('hex');
+        await trip.save();
+        res.json({ inviteCode: trip.inviteCode });
+    } catch (err) {
+        console.error('Error generating invite code:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+}
+
+exports.joinByInvite = async (req, res) => {
+    try {
+        const trip = await Trip.findOne({ inviteCode: req.params.code });
+        if (!trip) return res.status(404).json({ message: 'Invalid invite code' });
+
+        const isMember = trip.members.some(m => m.user.toString() === req.user.id);
+        if (isMember) return res.status(400).json({ message: 'Already a member of this trip' });
+
+        const color = Trip.getRandomUniqueColor(trip.members);
+        trip.members.push({ user: req.user._id, color });
+        await trip.save();
+
+        await trip.populate('members.user', 'username name avatar');
+        res.json(trip);
+    } catch (err) {
+        console.error('Error joining by invite code:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+}
