@@ -34,7 +34,6 @@ userSchema.pre('save', async function(next) {
     if (!this.isModified('password')) return next();
     if (!this.name) this.name = this.username; // Če name ni podan, nastavi na username
     this.password = await bcrypt.hash(this.password, 10);
-    next();
 });
 
 const User = mongoose.model('User', userSchema);
