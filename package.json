@@ -15,6 +15,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "frontend": "npm --prefix frontend run dev",
     "backend": "npm --prefix backend run dev",
-    "dev": "concurrently \"npm run frontend\" \"npm run backend\""
+    "dev": "concurrently \"npm run frontend\" \"npm run backend\"",
+    "install-all": "npm install --prefix frontend && npm install --prefix backend"
   }
 }
