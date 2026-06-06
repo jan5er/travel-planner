@@ -99,8 +99,8 @@ const TripPage = () => {
         <div className="trip-page">
             {/* HEADER */}
             <header className="trip-header">
-                <button className="btn-back" onClick={() => navigate('/dashboard')}>
-                    ← Back
+                <button className="btn-back" style={{ height: "-webkit-fill-available" }} onClick={() => navigate('/dashboard')}>
+                Back
                 </button>
                 <div className="trip-header-info">
                     {editingTitle ? (
@@ -150,7 +150,7 @@ const TripPage = () => {
                     <div className="trip-header-members">
                         {trip.members.map(m => (
                             <div
-                                key={m.user._id}
+                                key={`${m.user?._id}-${m.color}`}
                                 className="member-avatar"
                                 style={{ 
                                     border: `2px solid ${m.color}`,
@@ -177,7 +177,7 @@ const TripPage = () => {
                     <span className="section-icon">📋</span>
                     <div>
                         <h3>Trip Info</h3>
-                        <p>Members, description, settings</p>
+                        <p>Informations, notes and in-depth expense tracking</p>
                     </div>
                 </div>
                 <div className="trip-nav-card" onClick={() => navigate(`/trips/${id}/timeline`)}>
@@ -192,6 +192,13 @@ const TripPage = () => {
                     <div>
                         <h3>Map</h3>
                         <p>All cities & attractions</p>
+                    </div>
+                </div>
+                <div className="trip-nav-card" onClick={() => navigate(`/trips/${id}/settings`)}>
+                    <span className="section-icon">⚙️</span>
+                    <div>
+                        <h3>Trip Settings</h3>
+                        <p>Members, description, settings</p>
                     </div>
                 </div>
             </div>
