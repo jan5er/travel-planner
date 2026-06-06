@@ -196,3 +196,65 @@ exports.updateMemberColor = async (req, res) => {
         res.status(500).json({ message: 'Server error', error: err.message })
     }
 }
+
+exports.addNote = async (req, res) => {
+    try {
+        const trip = await Trip.findById(req.params.id)
+        if (!trip) return res.status(404).json({ message: 'Trip not found' })
+
+        const isMember = trip.members.some(m => m.user.toString() === req.user._id);
+        if (!isMember) return res.status(403).json({ message: 'Not authorized' })
+
+        const { title, content } = req.body
+        if (!title) return res.status(400).json({ message: 'Title is required' })
+
+        trip.notes.push({ title, content, addedBy: req.user._id })
+        await trip.save()
+        const newNote = trip.notes[trip.notes.length - 1]
+        await trip.populate('notes.addedBy', 'username name avatar')
+        res.json(newNote)
+    } catch (err) {
+        res.status(500).json({ message: 'Server error', error: err.message })
+    }
+}
+
+exports.deleteNote = async (req, res) => {
+    try {
+        const trip = await Trip.findById(req.params.id)
+        if (!trip) return res.status(404).json({ message: 'Trip not found' })
+
+        const isMember = trip.members.some(m => m.user.toString() === req.user._id);
+        if (!isMember) return res.status(403).json({ message: 'Not authorized' })
+
+        const note = trip.notes.id(req.params.noteId)
+        if (!note) return res.status(404).json({ message: 'Note not found' })
+
+        trip.notes.pull({ _id: req.params.noteId })
+        await trip.save()
+        res.json({ message: 'Note deleted' })
+    } catch (err) {
+        res.status(500).json({ message: 'Server error', error: err.message })
+    }
+}
+
+exports.updateNote = async (req, res) => {
+    try {
+        const trip = await Trip.findById(req.params.id)
+        if (!trip) return res.status(404).json({ message: 'Trip not found' })
+
+        const isMember = trip.members.some(m => m.user.toString() === req.user._id);
+        if (!isMember) return res.status(403).json({ message: 'Not authorized' })
+
+        const note = trip.notes.id(req.params.noteId)
+        if (!note) return res.status(404).json({ message: 'Note not found' })
+
+        const { title, content } = req.body
+        if (title !== undefined) note.title = title
+        if (content !== undefined) note.content = content
+        await trip.save()
+        await trip.populate('notes.addedBy', 'username name avatar')
+        res.json(note)
+    } catch (err) {
+        res.status(500).json({ message: 'Server error', error: err.message })
+    }
+}

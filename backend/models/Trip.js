@@ -19,6 +19,12 @@ const memberSchema = new mongoose.Schema({
     joinedAt: { type: Date, default: Date.now },
 }, { _id: false });
 
+const noteSchema = new mongoose.Schema({
+    title: { type: String, required: true, trim: true },
+    content: { type: String, default: '' },
+    addedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+}, { timestamps: true })
+
 const tripSchema = new mongoose.Schema({
     title: { type: String, required: true, trim: true },
     description: { type: String, trim: true },
@@ -28,6 +34,7 @@ const tripSchema = new mongoose.Schema({
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     members: [memberSchema],
     inviteCode: { type: String, unique: true, sparse: true },
+    notes: [noteSchema],
 }, { timestamps: true });
 
 tripSchema.statics.getRandomUniqueColor = function(members) {
