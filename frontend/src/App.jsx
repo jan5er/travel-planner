@@ -5,6 +5,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import TripPage from "./pages/TripPage";
 import ProfilePage from "./pages/ProfilePage";
+import TripInfoPage from "./pages/TripInfoPage";
 
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth();
@@ -31,6 +32,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <TripPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/trips/:id/info"
+            element={
+              <ProtectedRoute>
+                <TripInfoPage />
               </ProtectedRoute>
             }
           />

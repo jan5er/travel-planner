@@ -179,3 +179,20 @@ exports.joinByInvite = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 }
+
+exports.updateMemberColor = async (req, res) => {
+    try {
+        const trip = await Trip.findById(req.params.id)
+        if (!trip) return res.status(404).json({ message: 'Trip not found' })
+
+        const member = trip.members.find(m => m.user.toString() === req.params.userId)
+        if (!member) return res.status(404).json({ message: 'Member not found' })
+
+        member.color = req.body.color
+        await trip.save()
+        await trip.populate('members.user', 'username name avatar')
+        res.json(trip)
+    } catch (err) {
+        res.status(500).json({ message: 'Server error', error: err.message })
+    }
+}

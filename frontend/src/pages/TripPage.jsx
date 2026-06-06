@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 import api from '../api/axios'
 import AddCityModal from '../components/AddCityModal'
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
+import DatePicker from 'react-datepicker'
+import 'react-datepicker/dist/react-datepicker.css'
 
 const CITY_COLORS = [
     '#f7774f',
@@ -28,6 +30,9 @@ const TripPage = () => {
     const [deleting, setDeleting] = useState(false)
     const [deleteError, setDeleteError] = useState(null)
     const [cityToDelete, setCityToDelete] = useState(null)
+    const [editingTitle, setEditingTitle] = useState(false)
+    const [titleValue, setTitleValue] = useState('')
+    const [savingTrip, setSavingTrip] = useState(false)
 
     useEffect(() => {
         const fetchData = async () => {
@@ -59,6 +64,32 @@ const TripPage = () => {
         setActiveCity(newCity._id)
     }
 
+    const handleTitleSave = async () => {
+        if (!titleValue.trim() || titleValue === trip.title) {
+            setEditingTitle(false)
+            return
+        }
+        setSavingTrip(true)
+        try {
+            const res = await api.patch(`/trips/${id}`, { title: titleValue })
+            setTrip(res.data)
+        } catch (err) {
+            console.error('Error updating trip:', err)
+        } finally {
+            setSavingTrip(false)
+            setEditingTitle(false)
+        }
+    }
+
+    const handleDateChange = async (field, value) => {
+        try {
+            const res = await api.patch(`/trips/${id}`, { [field]: value || null })
+            setTrip(res.data)
+        } catch (err) {
+            console.error('Error updating dates:', err)
+        }
+    }
+
     const activeCityData = cities.find(c => c._id === activeCity)
 
     if (loading) return <div className="loading">Loading...</div>
@@ -69,31 +100,101 @@ const TripPage = () => {
             {/* HEADER */}
             <header className="trip-header">
                 <button className="btn-back" onClick={() => navigate('/dashboard')}>
-                Back
+                    ← Back
                 </button>
                 <div className="trip-header-info">
-                    <h1>{trip.title}</h1>
-                    {trip.startDate && (
-                        <span className="trip-dates">
-                            {new Date(trip.startDate).toLocaleDateString('en-GB')}
-                            {trip.endDate && ` → ${new Date(trip.endDate).toLocaleDateString('en-GB')}`}
-                        </span>
-                    )}
-                </div>
-
-                <div className="trip-header-members">
-                    {trip.members.map(m => (
-                        <div
-                            key={m.user._id}
-                            className="member-avatar"
-                            style={{ backgroundColor: m.color }}
-                            title={m.user.name}
+                    {editingTitle ? (
+                        <input
+                            className="trip-title-input"
+                            value={titleValue}
+                            onChange={e => setTitleValue(e.target.value)}
+                            onBlur={handleTitleSave}
+                            onKeyDown={e => e.key === 'Enter' && handleTitleSave()}
+                            autoFocus
+                        />
+                    ) : (
+                        <h1 
+                            className="trip-title-editable"
+                            onClick={() => { setTitleValue(trip.title); setEditingTitle(true) }}
+                            title="Click to edit"
                         >
-                            {m.user.name?.[0]?.toUpperCase()}
-                        </div>
-                    ))}
+                            {trip.title} <span className="edit-hint">✎</span>
+                        </h1>
+                    )}
+                    <div className="trip-dates-row">
+                        <DatePicker
+                            className="date-input date-input-sm"
+                            selected={trip.startDate ? new Date(trip.startDate) : null}
+                            onChange={date => handleDateChange('startDate', date)}
+                            dateFormat="dd/MM/yyyy"
+                            placeholderText="Start date"
+                            selectsStart
+                            startDate={trip.startDate ? new Date(trip.startDate) : null}
+                            endDate={trip.endDate ? new Date(trip.endDate) : null}
+                        />
+                        <span className="dates-arrow">→</span>
+                        <DatePicker
+                            className="date-input date-input-sm"
+                            selected={trip.endDate ? new Date(trip.endDate) : null}
+                            onChange={date => handleDateChange('endDate', date)}
+                            dateFormat="dd/MM/yyyy"
+                            placeholderText="End date"
+                            selectsEnd
+                            startDate={trip.startDate ? new Date(trip.startDate) : null}
+                            endDate={trip.endDate ? new Date(trip.endDate) : null}
+                            minDate={trip.startDate ? new Date(trip.startDate) : null}
+                        />
+                    </div>
+                </div>
+                <div className="trip-header-right">
+                    <div className="trip-header-members">
+                        {trip.members.map(m => (
+                            <div
+                                key={m.user._id}
+                                className="member-avatar"
+                                style={{ 
+                                    border: `2px solid ${m.color}`,
+                                    boxShadow: `0 0 30px ${m.color}60`
+                                }}
+                                title={m.user.name || m.user.username}
+                            >
+                                {m.user.avatar && m.user.avatar !== 'images/default-avatar.png' ? (
+                                    <img src={m.user.avatar} alt={m.user.username} />
+                                ) : (
+                                    <span style={{ backgroundColor: m.color }}>
+                                        {m.user.name?.[0]?.toUpperCase()}
+                                    </span>
+                                )}
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </header>
+
+            {/* 3 BIG NAV CARDS */}
+            <div className="trip-nav-cards">
+                <div className="trip-nav-card" onClick={() => navigate(`/trips/${id}/info`)}>
+                    <span className="section-icon">📋</span>
+                    <div>
+                        <h3>Trip Info</h3>
+                        <p>Members, description, settings</p>
+                    </div>
+                </div>
+                <div className="trip-nav-card" onClick={() => navigate(`/trips/${id}/timeline`)}>
+                    <span className="section-icon">📅</span>
+                    <div>
+                        <h3>Timeline</h3>
+                        <p>Full trip schedule</p>
+                    </div>
+                </div>
+                <div className="trip-nav-card" onClick={() => navigate(`/trips/${id}/map`)}>
+                    <span className="section-icon">🗺️</span>
+                    <div>
+                        <h3>Map</h3>
+                        <p>All cities & attractions</p>
+                    </div>
+                </div>
+            </div>
 
             {/* CITY TABS */}
             <div className="city-tabs-wrapper">
@@ -105,7 +206,6 @@ const TripPage = () => {
                             style={activeCity === city._id ? {
                                 borderColor: city.color,
                                 color: city.color,
-                                boxShadow: `0 2px 0 ${city.color}`
                             } : {}}
                             onClick={() => setActiveCity(city._id)}
                         >
@@ -116,18 +216,7 @@ const TripPage = () => {
                     <button className="city-tab add-city-tab" onClick={() => setShowAddCity(true)}>
                         + Add City
                     </button>
-
-                    <div id="delete-trip-btn">
-                        <button 
-                            className="btn-danger"
-                            title="Delete trip" 
-                            onClick={() => setShowConfirmDeleteTrip(true)}
-                        >
-                            Delete Entire Trip
-                        </button>
-                    </div>
                 </div>
-                {/* COLORED LINE BELOW TABS */}
                 <div 
                     className="city-active-bar"
                     style={{ backgroundColor: activeCityData?.color || 'transparent' }}
@@ -163,12 +252,12 @@ const TripPage = () => {
                             style={{ marginLeft: 'auto' }}
                             onClick={() => { setCityToDelete(activeCityData); setShowConfirmDeleteCity(true) }}
                         >
-                            Delete {activeCityData.name}
+                            Delete City
                         </button>
                     </div>
 
-                    {/* SECTION CARDS */}
-                    <div className="section-cards">
+                    {/* 4 SECTION CARDS - FULL WIDTH */}
+                    <div className="section-cards-row">
                         {[
                             { label: 'Transport', icon: '✈️', path: 'transport', desc: 'Flights, trains, buses' },
                             { label: 'Stays', icon: '🏨', path: 'stays', desc: 'Hotels & accommodation' },
@@ -177,28 +266,21 @@ const TripPage = () => {
                         ].map(section => (
                             <div
                                 key={section.path}
-                                className="section-card"
+                                className="section-card-sm"
                                 onClick={() => navigate(`/trips/${id}/${activeCity}/${section.path}`)}
                             >
-                                <span className="section-icon">{section.icon}</span>
-                                <h3>{section.label}</h3>
-                                <p>{section.desc}</p>
+                                <span className="section-icon-sm">{section.icon}</span>
+                                <div>
+                                    <h3>{section.label}</h3>
+                                    <p>{section.desc}</p>
+                                </div>
                             </div>
                         ))}
-                    </div>
-
-                    {/* TIMELINE CARD */}
-                    <div className="timeline-card" onClick={() => navigate(`/trips/${id}/timeline`)}>
-                        <span className="section-icon">📅</span>
-                        <div>
-                            <h3>Timeline</h3>
-                            <p>Full trip schedule across all cities</p>
-                        </div>
-                        <span className="timeline-arrow">→</span>
                     </div>
                 </div>
             ) : null}
 
+            {/* MODALS */}
             {showAddCity && (
                 <AddCityModal
                     tripId={id}
@@ -206,11 +288,10 @@ const TripPage = () => {
                     onAdded={handleCityAdded}
                 />
             )}
-
             {showConfirmDeleteTrip && (
                 <ConfirmDeleteModal
                     title="Delete trip"
-                    message={`This will permanently delete the trip "${trip.title}" and all associated data. Type DELETE to confirm.`}
+                    message={`This will permanently delete "${trip.title}" and all data. Type DELETE to confirm.`}
                     confirmPhrase="DELETE"
                     onCancel={() => { setShowConfirmDeleteTrip(false); setDeleteError(null) }}
                     onConfirm={async () => {
@@ -229,11 +310,10 @@ const TripPage = () => {
                     error={deleteError}
                 />
             )}
-
             {showConfirmDeleteCity && (
                 <ConfirmDeleteModal
                     title="Delete city"
-                    message={`This will remove the city "${cityToDelete?.name || ''}" from the trip. Type DELETE to confirm.`}
+                    message={`Remove "${cityToDelete?.name}" from the trip? Type DELETE to confirm.`}
                     confirmPhrase="DELETE"
                     onCancel={() => { setShowConfirmDeleteCity(false); setCityToDelete(null); setDeleteError(null) }}
                     onConfirm={async () => {
@@ -242,13 +322,9 @@ const TripPage = () => {
                             setDeleteError(null)
                             const cityId = cityToDelete?._id || cityToDelete
                             await api.delete(`/trips/cities/${cityId}`)
-                            setCities(prev => prev.filter(c => c._id !== cityId))
-
                             setCities(prev => {
                                 const updated = prev.filter(c => c._id !== cityId)
-                                if (activeCity === cityId) {
-                                    setActiveCity(updated[0]?._id || null)
-                                }
+                                if (activeCity === cityId) setActiveCity(updated[0]?._id || null)
                                 return updated
                             })
                             setShowConfirmDeleteCity(false)

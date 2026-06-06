@@ -42,7 +42,9 @@ const Dashboard = () => {
                 <h1>My Trips</h1>
                 <div className="header-right">
                     <button className="btn-secondary" onClick={() => navigate('/profile')}>Profile</button>
-                    <button className="btn-secondary" onClick={logout}>Logout</button>
+                    <button className="btn-secondary" onClick={logout} id="logout-btn">
+                        Logout
+                    </button>
                 </div>
             </header>
 
@@ -73,7 +75,7 @@ const Dashboard = () => {
                                                 key={m.user._id}
                                                 className="member-dot"
                                                 style={{ backgroundColor: m.color }}
-                                                title={m.user.username}
+                                                title={m.user.name}
                                             />
                                         ))}
                                     </div>
@@ -81,7 +83,10 @@ const Dashboard = () => {
                                 {trip.description && <p className="trip-description">{trip.description}</p>}
                                 <div className="trip-meta">
                                     {trip.startDate ? (
-                                        <span>{new Date(trip.startDate).toLocaleDateString()} {trip.endDate && `→ ${new Date(trip.endDate).toLocaleDateString()}`}</span>
+                                        <span>
+                                            {new Date(trip.startDate).toLocaleDateString('en-GB')} 
+                                            {trip.endDate && ` → ${new Date(trip.endDate).toLocaleDateString('en-GB')}`}
+                                        </span>
                                     ) : (
                                         <span className="no-dates">No dates set</span>
                                     )}
@@ -106,7 +111,7 @@ const Dashboard = () => {
                                             <h3>{trip.title}</h3>
                                         </div>
                                         <div className="trip-meta">
-                                            <span>{new Date(trip.startDate).toLocaleDateString()} → {new Date(trip.endDate).toLocaleDateString()}</span>
+                                            <span>{new Date(trip.startDate).toLocaleDateString('en-GB')} → {new Date(trip.endDate).toLocaleDateString('en-GB')}</span>
                                         </div>
                                     </div>
                                 ))}
