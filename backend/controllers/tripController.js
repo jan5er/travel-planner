@@ -1,11 +1,12 @@
-import { start } from 'repl'
-import { Trip, MEMBER_COLORS } from '../models/Trip.js'
+const { Trip, MEMBER_COLORS } = require('../models/Trip.js');
 const User = require('../models/User')
 const crypto = require('crypto')
+const mongoose = require('mongoose')
 
 exports.createTrip = async (req, res) => {
+    // console.log('req.user:', req.user)
     try {
-        const { title } = req.body
+        const { title } = req.body;
         if (!title) {
             return res.status(400).json({ message: 'Title is required' });
         }
@@ -16,7 +17,7 @@ exports.createTrip = async (req, res) => {
             createdBy: req.user._id,
             members: [{ user: req.user._id, color }],
         });
-
+        console.log('Created trip:', trip);
         res.status(201).json(trip);
     } catch (err) {
         console.error('Error creating trip:', err)
@@ -47,7 +48,7 @@ exports.getTrip = async (req, res) => {
             .populate('members.user', 'username name avatar')
         if (!trip) return res.status(404).json({ message: 'Trip not found' });
 
-        const isMember = trip.members.some(m => m.user._id.toString() === req.user.id);
+        const isMember = trip.members.some(m => m.user._id.toString() === req.user._id);
         if (!isMember) return res.status(403).json({ message: 'Not authorized' });
 
         res.json(trip);
@@ -62,7 +63,7 @@ exports.updateTrip = async (req, res) => {
         const trip = await Trip.findById(req.params.id);
         if (!trip) return res.status(404).json({ message: 'Trip not found' });
 
-        const isMember = trip.members.some(m => m.user.toString() === req.user.id);
+        const isMember = trip.members.some(m => m.user.toString() === req.user._id);
         if (!isMember) return res.status(403).json({ message: 'Not authorized' });
 
         const allowedEdits = ['title', 'description', 'coverImage', 'startDate', 'endDate'];
@@ -86,7 +87,7 @@ exports.addMember = async (req, res) => {
         const trip = await Trip.findById(req.params.id);
         if (!trip) return res.status(404).json({ message: 'Trip not found' });
 
-        const isMember = trip.members.some(m => m.user.toString() === req.user.id);
+        const isMember = trip.members.some(m => m.user.toString() === req.user._id);
         if (!isMember) return res.status(403).json({ message: 'Not authorized' });
 
         const userToAdd = await User.findOne({
@@ -113,7 +114,7 @@ exports.removeMember = async (req, res) => {
         const trip = await Trip.findById(req.params.id);
         if (!trip) return res.status(404).json({ message: 'Trip not found' });
 
-        const isMember = trip.members.some(m => m.user.toString() === req.user.id);
+        const isMember = trip.members.some(m => m.user.toString() === req.user._id);
         if (!isMember) return res.status(403).json({ message: 'Not authorized' });
 
         if (req.params.memberId === trip.createdBy.toString()) {
@@ -134,7 +135,7 @@ exports.generateInvite = async (req, res) => {
         const trip = await Trip.findById(req.params.id);
         if (!trip) return res.status(404).json({ message: 'Trip not found' });
 
-        const isMember = trip.members.some(m => m.user.toString() === req.user.id);
+        const isMember = trip.members.some(m => m.user.toString() === req.user._id);
         if (!isMember) return res.status(403).json({ message: 'Not authorized' });
 
         trip.inviteCode = crypto.randomBytes(8).toString('hex');
@@ -146,12 +147,25 @@ exports.generateInvite = async (req, res) => {
     }
 }
 
+exports.deleteTrip = async (req, res) => {
+    try {
+        const trip = await Trip.findById(req.params.id);
+        if (!trip) return res.status(404).json({ message: 'Trip not found' });
+
+        await trip.deleteOne();
+        res.json({ message: 'Trip deleted' });
+    } catch (err) {
+        console.error('Error deleting trip:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+}
+
 exports.joinByInvite = async (req, res) => {
     try {
         const trip = await Trip.findOne({ inviteCode: req.params.code });
         if (!trip) return res.status(404).json({ message: 'Invalid invite code' });
 
-        const isMember = trip.members.some(m => m.user.toString() === req.user.id);
+        const isMember = trip.members.some(m => m.user.toString() === req.user._id);
         if (isMember) return res.status(400).json({ message: 'Already a member of this trip' });
 
         const color = Trip.getRandomUniqueColor(trip.members);

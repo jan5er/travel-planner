@@ -4,7 +4,7 @@ const bcrypt = require('bcrypt');
 
 const generateToken = (user) => {
     return jwt.sign({
-        id: user._id,
+        _id: user._id,
         username: user.username,
     }, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
@@ -51,7 +51,7 @@ exports.login = async (req, res) => {
         res.json({ 
             token,
             user: {
-                id: user._id,
+                _id: user._id,
                 username: user.username,
                 email: user.email,
                 name: user.name,
