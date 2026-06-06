@@ -40,6 +40,36 @@ const StaysPage = () => {
     const [showAddModal, setShowAddModal] = useState(false)
     const [stayToDelete, setStayToDelete] = useState(null)
     const [deleting, setDeleting] = useState(false)
+    const [stayToEdit, setStayToEdit] = useState(null)
+    const [expandedNotes, setExpandedNotes] = useState({})
+    const [noteInputs, setNoteInputs] = useState({})
+
+    const toggleNotes = (stayId) => {
+        setExpandedNotes(prev => ({ ...prev, [stayId]: !prev[stayId] }))
+    }
+
+    const handleAddNote = async (stayId) => {
+        const text = noteInputs[stayId]?.trim()
+        if (!text) return
+        try {
+            const res = await api.post(`/stays/${stayId}/notes`, { text })
+            setStays(prev => prev.map(s => s._id === stayId ? res.data : s))
+            setNoteInputs(prev => ({ ...prev, [stayId]: '' }))
+        } catch (err) {
+            console.error('Error adding note:', err)
+        }
+    }
+
+    const handleDeleteNote = async (stayId, noteId) => {
+        try {
+            await api.delete(`/stays/${stayId}/notes/${noteId}`)
+            setStays(prev => prev.map(s => s._id === stayId ? {
+                ...s, notes: s.notes.filter(n => n._id !== noteId)
+            } : s))
+        } catch (err) {
+            console.error('Error deleting note:', err)
+        }
+    }
 
     useEffect(() => {
         const fetchData = async () => {
@@ -91,7 +121,7 @@ const StaysPage = () => {
 
     const perPerson = (stay) => {
         if (!stay.cost || !stay.splitWith?.length) return null
-        return ((stay.cost * (stay.quantity || 1)) / stay.splitWith.length).toFixed(2)
+        return (stay.cost / stay.splitWith.length || 1).toFixed(2)
     }
 
     const selected = stays.filter(s => s.isSelected).sort((a, b) => new Date(a.checkIn) - new Date(b.checkIn))
@@ -136,14 +166,19 @@ const StaysPage = () => {
                             {(stay.checkIn || stay.checkOut) && (
                                 <span className="stay-dates">
                                     {stay.checkIn && new Date(stay.checkIn).toLocaleDateString('en-GB')}
-                                    {stay.checkOut && ` → ${new Date(stay.checkOut).toLocaleDateString('en-GB')}`}
+                                    {stay.checkOut && ` - ${new Date(stay.checkOut).toLocaleDateString('en-GB')}`}
+                                    {" (" + (stay.checkOut && stay.checkIn ? Math.ceil((new Date(stay.checkOut) - new Date(stay.checkIn)) / (1000 * 60 * 60 * 24)) : 1) + " nights)"}
+                                    
                                 </span>
                             )}
                         </div>
                         {stay.cost > 0 && (
                             <div className="stay-cost-block">
-                                <span className="stay-total">€{(stay.cost * (stay.quantity || 1)).toFixed(2)}</span>
-                                {pp && <span className="stay-per-person">€{pp}<span className="pp-label">/person</span></span>}
+                                <span className="stay-total">€{(stay.cost).toFixed(2)}</span>
+                                {pp && stay.quantity > 1 && (
+                                    <span className="stay-per-person">€{(stay.cost / stay.quantity).toFixed(2)}<span className="pp-label"> total per unit</span></span>
+                                )}   
+                                {pp && <span className="stay-per-person">€{pp}<span className="pp-label"> total per person</span></span>}
                             </div>
                         )}
                     </div>
@@ -151,24 +186,25 @@ const StaysPage = () => {
                         <div className="stay-split">
                             <span className="split-label">Split:</span>
                             <div className="split-avatars">
-                                {stay.splitWith.map(uid => {
-                                    const member = trip.members.find(m => m.user._id === uid || m.user === uid)
-                                    if (!member) return null
+                                {stay.splitWith.map(member => {
+                                    if (!member?._id) return null
+                                    const tripMember = trip.members.find(m => 
+                                        m.user._id === member._id || 
+                                        m.user._id?.toString() === member._id?.toString()
+                                    )
+                                    const color = tripMember?.color || 'var(--accent)'
                                     return (
                                         <div
-                                            key={uid}
+                                            key={member._id}
                                             className="member-avatar"
-                                            style={{
-                                                border: `2px solid ${member.color}`,
-                                                width: 24, height: 24, fontSize: '0.65rem'
-                                            }}
-                                            title={member.user.name || member.user.username}
+                                            style={{ border: `2px solid ${color}`, width: 24, height: 24, fontSize: '0.65rem' }}
+                                            title={member.name || member.username}
                                         >
-                                            {member.user.avatar && member.user.avatar !== 'images/default-avatar.png' ? (
-                                                <img src={member.user.avatar} alt="" />
+                                            {member.avatar && member.avatar !== 'images/default-avatar.png' ? (
+                                                <img src={member.avatar} alt="" />
                                             ) : (
-                                                <span style={{ backgroundColor: member.color }}>
-                                                    {member.user.name?.[0]?.toUpperCase()}
+                                                <span style={{ backgroundColor: color }}>
+                                                    {member.name?.[0]?.toUpperCase()}
                                                 </span>
                                             )}
                                         </div>
@@ -177,14 +213,69 @@ const StaysPage = () => {
                             </div>
                         </div>
                     )}
+                    
+                    <div className="stay-notes-section">
+                        <button 
+                            className="notes-toggle"
+                            onClick={() => toggleNotes(stay._id)}
+                        >
+                            <span>{stay.notes?.length || 0} note{stay.notes?.length !== 1 ? 's' : ''}</span>
+                            <span>{expandedNotes[stay._id] ? '▲' : '▼'}</span>
+                        </button>
 
-                    {stay.notes && <p className="stay-notes">{stay.notes}</p>}
+                        {expandedNotes[stay._id] && (
+                            <div className="notes-expanded">
+                                {stay.notes?.length > 0 && (
+                                    <div className="notes-list-stay">
+                                        {stay.notes.map(note => (
+                                            <div key={note._id} className="note-item">
+                                                <div className="note-item-avatar">
+                                                    {note.user?.avatar && note.user.avatar !== 'images/default-avatar.png' ? (
+                                                        <img src={note.user.avatar} alt="" />
+                                                    ) : (
+                                                        <span>{note.user?.name?.[0]?.toUpperCase()}</span>
+                                                    )}
+                                                </div>
+                                                <div className="note-item-content">
+                                                    <span className="note-item-author">{note.user?.name || note.user?.username}</span>
+                                                    <p className="note-item-text">{note.text}</p>
+                                                </div>
+                                                <button 
+                                                    className="btn-icon danger" 
+                                                    style={{ fontSize: '0.7rem', width: 24, height: 24 }}
+                                                    onClick={() => handleDeleteNote(stay._id, note._id)}
+                                                >
+                                                    ✕
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                <div className="note-input-row">
+                                    <input
+                                        type="text"
+                                        value={noteInputs[stay._id] || ''}
+                                        onChange={e => setNoteInputs(prev => ({ ...prev, [stay._id]: e.target.value }))}
+                                        placeholder="Add a note..."
+                                        onKeyDown={e => e.key === 'Enter' && handleAddNote(stay._id)}
+                                    />
+                                    <button 
+                                        className="btn-primary" 
+                                        style={{ padding: '8px 14px', fontSize: '0.85rem' }}
+                                        onClick={() => handleAddNote(stay._id)}
+                                    >
+                                        Add
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div className="stay-card-actions">
                     <div 
                         className="member-avatar"
-                        style={{ width: 28, height: 28, border: `2px solid ${color}`, boxShadow: `0 0 6px ${color}60` }}
+                        style={{ width: 42, height: 42, border: `2px solid ${color}`, boxShadow: `0 0 6px ${color}60` }}
                         title={`Added by ${stay.addedBy?.name || stay.addedBy?.username}`}
                     >
                         {stay.addedBy?.avatar && stay.addedBy.avatar !== 'images/default-avatar.png' ? (
@@ -193,7 +284,10 @@ const StaysPage = () => {
                             <span style={{ backgroundColor: color }}>{stay.addedBy?.name?.[0]?.toUpperCase()}</span>
                         )}
                     </div>
-                    <button className="btn-icon danger" onClick={() => setStayToDelete(stay)} title="Delete">🗑</button>
+                    <div style={{ display: 'flex', gap: 4, marginTop: '5%' }}>
+                        <button className="btn-icon" onClick={() => setStayToEdit(stay)} title="Edit">✎</button>
+                        <button className="btn-icon danger" onClick={() => setStayToDelete(stay)} title="Delete">X</button>
+                    </div>
                 </div>
             </div>
         )
@@ -209,7 +303,7 @@ const StaysPage = () => {
                         {city?.name}{city?.country && `, ${city.country}`}
                     </span>
                 </div>
-                <button className="btn-primary" onClick={() => setShowAddModal(true)}>+ Add Stay</button>
+                <button className="btn-primary" style={{ alignSelf: 'center' }} onClick={() => setShowAddModal(true)}>+ Add Stay</button>
             </header>
 
             <div className="stays-section-content">
@@ -259,7 +353,7 @@ const StaysPage = () => {
                                     <Popup>
                                         <strong>{stay.name}</strong>
                                         {stay.address && <><br />{stay.address}</>}
-                                        {stay.cost > 0 && <><br />€{(stay.cost * (stay.quantity || 1)).toFixed(2)}</>}
+                                        {stay.cost > 0 && <><br />€{(stay.cost / (stay.quantity || 1)).toFixed(2)}</>}
                                     </Popup>
                                 </Marker>
                             ))}
@@ -268,15 +362,23 @@ const StaysPage = () => {
                 )}
             </div>
 
-            {showAddModal && trip && (
+            {(showAddModal || stayToEdit) && trip && (
                 <AddStayModal
                     tripId={id}
                     cityId={cityId}
                     members={trip.members}
                     tripStartDate={trip.startDate}
                     tripEndDate={trip.endDate}
-                    onClose={() => setShowAddModal(false)}
-                    onAdded={stay => setStays(prev => [stay, ...prev])}
+                    initialData={stayToEdit}
+                    onClose={() => { setShowAddModal(false); setStayToEdit(null) }}
+                    onAdded={stay => {
+                        if (stayToEdit) {
+                            setStays(prev => prev.map(s => s._id === stay._id ? stay : s))
+                        } else {
+                            setStays(prev => [stay, ...prev])
+                        }
+                        setStayToEdit(null)
+                    }}
                 />
             )}
 

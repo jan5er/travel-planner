@@ -2,19 +2,20 @@ import { useState, useEffect, useRef } from 'react'
 import DatePicker from 'react-datepicker'
 import api from '../api/axios'
 
-const AddStayModal = ({ tripId, cityId, members, tripStartDate, tripEndDate, onClose, onAdded }) => {
+const AddStayModal = ({ tripId, cityId, members, tripStartDate, tripEndDate, onClose, onAdded, initialData }) => {
     const [form, setForm] = useState({
-        name: '',
-        bookingUrl: '',
-        address: '',
-        checkIn: null,
-        checkOut: null,
-        cost: '',
-        quantity: 1,
-        notes: '',
-        splitWith: members.map(m => m.user._id)
+        name: initialData?.name || '',
+        bookingUrl: initialData?.bookingUrl || '',
+        address: initialData?.address || '',
+        checkIn: initialData?.checkIn ? new Date(initialData.checkIn) : null,
+        checkOut: initialData?.checkOut ? new Date(initialData.checkOut) : null,
+        cost: initialData?.cost || '',
+        quantity: initialData?.quantity || 1,
+        notes: initialData?.notes || '',
+        splitWith: initialData?.splitWith?.map(u => u._id || u) || members.map(m => m.user._id),
+        coordinates: initialData?.coordinates
     })
-    const [addressQuery, setAddressQuery] = useState('')
+    const [addressQuery, setAddressQuery] = useState(initialData?.address || '')
     const [suggestions, setSuggestions] = useState([])
     const [searching, setSearching] = useState(false)
     const [loading, setLoading] = useState(false)
@@ -23,22 +24,40 @@ const AddStayModal = ({ tripId, cityId, members, tripStartDate, tripEndDate, onC
 
     useEffect(() => {
         if (addressQuery.length < 3) { setSuggestions([]); return }
+        
+        // Prekličemo prejšnji časovnik, če uporabnik še vedno tipka (debounce)
         clearTimeout(debounceRef.current)
+        
         debounceRef.current = setTimeout(async () => {
             setSearching(true)
             try {
+                // OpenStreetMap se hitro zmede, če mu pošljemo številko sobe ali nadstropje.
+                // Zato z regex izbrišemo besede kot so "Room 502", "Unit 1", "5th Floor" itd.
+                let cleanedQuery = addressQuery
+                    .replace(/room\s*\d+/gi, '')
+                    .replace(/unit\s*\d+/gi, '')
+                    .replace(/f(?:loor)?\s*\d+/gi, '')
+                    .replace(/\b\d+(?:st|nd|rd|th)\s*floor/gi, '') // Tukaj ulovimo zapise v stilu "5th floor"
+                    .replace(/,\s*,/g, ',')                       // Če sta nam po brisanju ostali dve vejici skupaj, ju združimo v eno
+                    .trim();                                      // Odstranimo odvečne premike na začetku in koncu niza
+
+                console.log("Prvotni vnos:", addressQuery);
+                console.log("Očiščeno za Nominatim:", cleanedQuery);
+
+                // očiščen naslov
                 const res = await fetch(
-                    `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(addressQuery)}&format=json&limit=5`,
+                    `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cleanedQuery)}&format=json&limit=5`,
                     { headers: { 'Accept-Language': 'en' } }
                 )
                 const data = await res.json()
+                
                 setSuggestions(data)
             } catch (err) {
                 console.error('Nominatim error:', err)
             } finally {
                 setSearching(false)
             }
-        }, 400)
+        }, 400) 
     }, [addressQuery])
 
     const handleAddressSelect = (place) => {
@@ -65,7 +84,7 @@ const AddStayModal = ({ tripId, cityId, members, tripStartDate, tripEndDate, onC
 
     const perPerson = () => {
         if (!form.cost || form.splitWith.length === 0) return null
-        return ((parseFloat(form.cost) * (form.quantity || 1)) / form.splitWith.length).toFixed(2)
+        return (parseFloat(form.cost) / form.splitWith.length || 1).toFixed(2)
     }
 
     const handleSubmit = async (e) => {
@@ -73,11 +92,19 @@ const AddStayModal = ({ tripId, cityId, members, tripStartDate, tripEndDate, onC
         setError('')
         setLoading(true)
         try {
-            const res = await api.post(`/stays/${cityId}`, {
-                ...form,
-                tripId,
-                cost: parseFloat(form.cost) || 0,
-            })
+            let res
+            if (initialData) {
+                res = await api.patch(`/stays/${initialData._id}`, {
+                    ...form,
+                    cost: parseFloat(form.cost) || 0,
+                })
+            } else {
+                res = await api.post(`/stays/${cityId}`, {
+                    ...form,
+                    tripId,
+                    cost: parseFloat(form.cost) || 0,
+                })
+            }
             onAdded(res.data)
             onClose()
         } catch (err) {
@@ -92,7 +119,7 @@ const AddStayModal = ({ tripId, cityId, members, tripStartDate, tripEndDate, onC
             <div className="modal modal-lg" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
                     <div>
-                        <h2>Add Stay</h2>
+                        <h2>{initialData ? 'Edit Stay' : 'Add Stay'}</h2>
                         <p className="modal-subtitle">Add a hotel, airbnb, or any accommodation</p>
                     </div>
                     <button className="modal-close" onClick={onClose}>✕</button>
@@ -231,26 +258,16 @@ const AddStayModal = ({ tripId, cityId, members, tripStartDate, tripEndDate, onC
                         </div>
                         {perPerson() && (
                             <p className="per-person-preview">
-                                {form.quantity > 1 && <span>Total: €{(parseFloat(form.cost) * form.quantity).toFixed(2)} · </span>}
-                                Per person: <strong>€{perPerson()}</strong> ({form.splitWith.length} {form.splitWith.length === 1 ? 'person' : 'people'})
+                                {form.quantity > 1 && <span>Total: <strong>€{(parseFloat(form.cost)).toFixed(2)}</strong> · </span>}
+                                Per person: <strong>€{((parseFloat(perPerson()) || 0)).toFixed(2)}</strong> ({form.splitWith.length} {form.splitWith.length === 1 ? 'person' : 'people'})
                             </p>
                         )}
-                    </div>
-
-                    <div className="form-group">
-                        <label>Notes <span className="optional">(optional)</span></label>
-                        <textarea
-                            value={form.notes}
-                            onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-                            placeholder="Any notes about this stay..."
-                            rows={2}
-                        />
                     </div>
 
                     <div className="modal-actions">
                         <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
                         <button type="submit" className="btn-primary" disabled={loading}>
-                            {loading ? 'Adding...' : 'Add Stay'}
+                            {loading ? 'Saving...' : initialData ? 'Save Changes' : 'Add Stay'}
                         </button>
                     </div>
                 </form>

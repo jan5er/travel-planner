@@ -1701,10 +1701,119 @@ textarea:focus {
 }
 
 .stays-map {
-    height: 360px;
+    height: 500px;
     border-radius: var(--radius);
     border: 1px solid var(--border);
     overflow: hidden;
+    z-index: 0;
+    width: 75%;
+    justify-self: center;
+    align-self: center;
+}
+
+.stay-notes-section {
+    margin-top: 8px;
+    border-top: 1px solid var(--border);
+    padding-top: 8px;
+}
+
+.notes-toggle {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 4px 0;
+    transition: color 0.2s;
+}
+
+.notes-toggle:hover {
+    color: var(--text-primary);
+}
+
+.notes-expanded {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.notes-list-stay {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.note-item {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+}
+
+.note-item-avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--bg-input);
+    overflow: hidden;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
+.note-item-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.note-item-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.note-item-author {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.note-item-text {
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+.note-input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.note-input-row input {
+    flex: 1;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.note-input-row input:focus {
+    border-color: var(--accent);
 }
 
 
