@@ -146,7 +146,10 @@ exports.toggleSelectStay = async (req, res) => {
         if (!isMember) return res.status(403).json({ message: 'Not authorized' });
 
         stay.isSelected = !stay.isSelected;
-        await stay.save();
+        await stay.save()
+        await stay.populate('addedBy', 'name username avatar')
+        await stay.populate('splitWith', 'name username avatar')
+        await stay.populate('notes.user', 'name username avatar')
         res.json(stay);
     } catch (err) {
         res.status(500).json({ message: 'Server error', error: err.message })

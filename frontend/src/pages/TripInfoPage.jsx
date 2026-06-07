@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import api from '../api/axios'
 
 const TripInfoPage = () => {
-    const { id } = useParams()
+    const { id, cityId } = useParams()
     const navigate = useNavigate()
     const [trip, setTrip] = useState(null)
     const [loading, setLoading] = useState(true)
@@ -74,13 +74,15 @@ const TripInfoPage = () => {
         setEditContent(note.content || '')
     }
 
+    const backCityId = cityId || localStorage.getItem(`trip-active-city-${id}`)
+
     if (loading) return <div className="loading">Loading...</div>
     if (!trip) return <div className="loading">Trip not found</div>
 
     return (
         <div className="info-page">
             <header className="trip-header">
-                <button className="btn-back" onClick={() => navigate(`/trips/${id}`)}>
+                <button className="btn-back" onClick={() => navigate(backCityId ? `/trips/${id}/${backCityId}` : `/trips/${id}`)}>
                 Back
                 </button>
                 <div className="trip-header-info" style={{ "justify-items": "end" }}>

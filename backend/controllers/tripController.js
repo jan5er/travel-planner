@@ -73,7 +73,9 @@ exports.updateTrip = async (req, res) => {
             }
         });
 
-        await trip.save();
+        await trip.save()
+        await trip.populate('members.user', 'username name avatar')
+        await trip.populate('createdBy', 'username name avatar')
         res.json(trip);
     } catch (err) {
         console.error('Error updating trip:', err);

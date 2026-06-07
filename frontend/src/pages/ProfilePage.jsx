@@ -83,7 +83,7 @@ const ProfilePage = () => {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                     <h2>Profile</h2>
                     <div>
-                        <button className="btn-secondary" onClick={() => navigate('/dashboard')}>← Back</button>
+                        <button className="btn-secondary" onClick={() => navigate('/dashboard')}>Back</button>
                     </div>
                 </div>
 

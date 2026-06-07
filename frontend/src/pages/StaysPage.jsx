@@ -7,7 +7,6 @@ import api from '../api/axios'
 import AddStayModal from '../components/AddStayModal'
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
 
-// Fix leaflet default icon issue with webpack/vite
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
     iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -130,6 +129,7 @@ const StaysPage = () => {
     const mapCenter = mapStays.length > 0
         ? [mapStays[0].coordinates.lat, mapStays[0].coordinates.lng]
         : city?.coordinates ? [city.coordinates.lat, city.coordinates.lng] : [48, 16]
+    const backCityId = cityId || localStorage.getItem(`trip-active-city-${id}`)
 
     if (loading) return <div className="loading">Loading...</div>
 
@@ -296,7 +296,7 @@ const StaysPage = () => {
     return (
         <div className="section-page">
             <header className="trip-header">
-                <button className="btn-back" onClick={() => navigate(`/trips/${id}`)}>← Back</button>
+                <button className="btn-back" style={{ height: "-webkit-fill-available" }} onClick={() => navigate(backCityId ? `/trips/${id}/${backCityId}` : `/trips/${id}`)}>Back</button>
                 <div className="trip-header-info">
                     <h1>Stays</h1>
                     <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>

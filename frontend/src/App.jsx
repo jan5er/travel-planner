@@ -8,6 +8,7 @@ import ProfilePage from "./pages/ProfilePage";
 import TripSettingsPage from "./pages/TripSettingsPage";
 import TripInfoPage from "./pages/TripInfoPage";
 import StaysPage from "./pages/StaysPage";
+import TransportPage from './pages/TransportPage'
 
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth();
@@ -30,7 +31,7 @@ function App() {
             }
           />
           <Route
-            path="/trips/:id"
+            path="/trips/:id/:cityId?"
             element={
               <ProtectedRoute>
                 <TripPage />
@@ -45,9 +46,24 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/trips/:id/:cityId/settings" element={
+              <ProtectedRoute>
+                  <TripSettingsPage />
+              </ProtectedRoute>
+          } />
           <Route path="/trips/:id/info" element={
               <ProtectedRoute>
                   <TripInfoPage />
+              </ProtectedRoute>
+          } />
+          <Route path="/trips/:id/:cityId/info" element={
+              <ProtectedRoute>
+                  <TripInfoPage />
+              </ProtectedRoute>
+          } />
+          <Route path="/trips/:id/:cityId/transport" element={
+              <ProtectedRoute>
+                  <TransportPage />
               </ProtectedRoute>
           } />
           <Route path="/trips/:id/:cityId/stays" element={

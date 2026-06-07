@@ -6,6 +6,7 @@ const tripRoutes = require('./routes/tripRoutes');
 const cityRoutes = require('./routes/cityRoutes');
 const userRoutes = require('./routes/userRoutes');
 const stayRoutes = require('./routes/stayRoutes');
+const transportRoutes = require('./routes/transportRoutes');
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use('/api/trips', tripRoutes);
 app.use('/api/trips', cityRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/stays', stayRoutes);
+app.use('/api/transports', transportRoutes);
 
 mongoose.connect(process.env.MONGO_URI, { dbName: 'travelplanner' })
     .then(() => console.log('Connected to the database'))

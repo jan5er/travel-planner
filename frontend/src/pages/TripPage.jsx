@@ -18,7 +18,7 @@ const CITY_COLORS = [
 ]
 
 const TripPage = () => {
-    const { id } = useParams()
+    const { id, cityId } = useParams()
     const navigate = useNavigate()
     const [trip, setTrip] = useState(null)
     const [cities, setCities] = useState([])
@@ -47,7 +47,16 @@ const TripPage = () => {
                     color: city.color || CITY_COLORS[i % CITY_COLORS.length]
                 }))
                 setCities(citiesWithColors)
-                if (citiesWithColors.length > 0) setActiveCity(citiesWithColors[0]._id)
+                const savedCityId = localStorage.getItem(`trip-active-city-${id}`)
+                const preferredCityId = cityId || savedCityId
+                const initialCity = citiesWithColors.find(c => c._id === preferredCityId) || citiesWithColors[0]
+                if (initialCity) {
+                    setActiveCity(initialCity._id)
+                    localStorage.setItem(`trip-active-city-${id}`, initialCity._id)
+                    if (preferredCityId !== initialCity._id) {
+                        navigate(`/trips/${id}/${initialCity._id}`, { replace: true })
+                    }
+                }
             } catch (err) {
                 console.error('Error fetching trip:', err)
             } finally {
@@ -55,13 +64,15 @@ const TripPage = () => {
             }
         }
         fetchData()
-    }, [id])
+    }, [id, cityId, navigate])
 
     const handleCityAdded = (newCity) => {
         const color = CITY_COLORS[cities.length % CITY_COLORS.length]
         const cityWithColor = { ...newCity, color }
         setCities(prev => [...prev, cityWithColor])
         setActiveCity(newCity._id)
+        localStorage.setItem(`trip-active-city-${id}`, newCity._id)
+        navigate(`/trips/${id}/${newCity._id}`, { replace: true })
     }
 
     const handleTitleSave = async () => {
@@ -91,6 +102,18 @@ const TripPage = () => {
     }
 
     const activeCityData = cities.find(c => c._id === activeCity)
+
+    useEffect(() => {
+        if (!activeCity || !id) return
+        localStorage.setItem(`trip-active-city-${id}`, activeCity)
+    }, [activeCity, id])
+
+    useEffect(() => {
+        if (!activeCity || !id) return
+        if (cityId !== activeCity) {
+            navigate(`/trips/${id}/${activeCity}`, { replace: true })
+        }
+    }, [activeCity, cityId, id, navigate])
 
     if (loading) return <div className="loading">Loading...</div>
     if (!trip) return <div className="loading">Trip not found</div>
@@ -173,28 +196,28 @@ const TripPage = () => {
 
             {/* 3 BIG NAV CARDS */}
             <div className="trip-nav-cards">
-                <div className="trip-nav-card" onClick={() => navigate(`/trips/${id}/info`)}>
+                <div className="trip-nav-card" onClick={() => navigate(`/trips/${id}/${activeCity}/info`)}>
                     <span className="section-icon">📋</span>
                     <div>
                         <h3>Trip Info</h3>
                         <p>Informations, notes and in-depth expense tracking</p>
                     </div>
                 </div>
-                <div className="trip-nav-card" onClick={() => navigate(`/trips/${id}/timeline`)}>
+                <div className="trip-nav-card" onClick={() => navigate(`/trips/${id}/${activeCity}/timeline`)}>
                     <span className="section-icon">📅</span>
                     <div>
                         <h3>Timeline</h3>
                         <p>Full trip schedule</p>
                     </div>
                 </div>
-                <div className="trip-nav-card" onClick={() => navigate(`/trips/${id}/map`)}>
+                <div className="trip-nav-card" onClick={() => navigate(`/trips/${id}/${activeCity}/map`)}>
                     <span className="section-icon">🗺️</span>
                     <div>
                         <h3>Map</h3>
                         <p>All cities & attractions</p>
                     </div>
                 </div>
-                <div className="trip-nav-card" onClick={() => navigate(`/trips/${id}/settings`)}>
+                <div className="trip-nav-card" onClick={() => navigate(`/trips/${id}/${activeCity}/settings`)}>
                     <span className="section-icon">⚙️</span>
                     <div>
                         <h3>Trip Settings</h3>
@@ -214,7 +237,11 @@ const TripPage = () => {
                                 borderColor: city.color,
                                 color: city.color,
                             } : {}}
-                            onClick={() => setActiveCity(city._id)}
+                            onClick={() => {
+                                setActiveCity(city._id)
+                                localStorage.setItem(`trip-active-city-${id}`, city._id)
+                                navigate(`/trips/${id}/${city._id}`, { replace: true })
+                            }}
                         >
                             {city.name}
                             {city.country && <span className="tab-country">{city.country}</span>}

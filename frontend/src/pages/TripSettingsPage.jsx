@@ -18,7 +18,7 @@ const MEMBER_COLORS = [
 ]
 
 const TripInfoPage = () => {
-    const { id } = useParams()
+    const { id, cityId } = useParams()
     const navigate = useNavigate()
     const { user } = useAuth()
 
@@ -114,11 +114,12 @@ const TripInfoPage = () => {
     if (!trip) return <div className="loading">Trip not found</div>
 
     const isMe = (userId) => userId === user?._id
+    const backCityId = cityId || localStorage.getItem(`trip-active-city-${id}`)
 
     return (
         <div className="info-page">
             <header className="trip-header">
-                <button className="btn-back" onClick={() => navigate(`/trips/${id}`)}>
+                <button className="btn-back" onClick={() => navigate(backCityId ? `/trips/${id}/${backCityId}` : `/trips/${id}`)}>
                 Back
                 </button>
                 <div className="trip-header-info" style={{"justify-items": "end"}}>

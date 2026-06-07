@@ -130,7 +130,7 @@ const AddStayModal = ({ tripId, cityId, members, tripStartDate, tripEndDate, onC
                 <form onSubmit={handleSubmit}>
                     <div className="form-row">
                         <div className="form-group" style={{ flex: 2 }}>
-                            <label>Name</label>
+                            <label>Name*</label>
                             <input
                                 type="text"
                                 value={form.name}
