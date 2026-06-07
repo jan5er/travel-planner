@@ -23,3 +23,6 @@ const attractionSchema = new mongoose.Schema({
     votes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
 
 }, { timestamps: true });
+
+const Attraction = mongoose.model('Attraction', attractionSchema);
+module.exports = Attraction;

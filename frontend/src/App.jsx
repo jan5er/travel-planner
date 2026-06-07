@@ -9,6 +9,7 @@ import TripSettingsPage from "./pages/TripSettingsPage";
 import TripInfoPage from "./pages/TripInfoPage";
 import StaysPage from "./pages/StaysPage";
 import TransportPage from './pages/TransportPage'
+import AttractionsPage from './pages/AttractionsPage'
 
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth();
@@ -38,6 +39,11 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/trips/:id/:cityId/attractions" element={
+              <ProtectedRoute>
+                  <AttractionsPage />
+              </ProtectedRoute>
+          } />
           <Route
             path="/trips/:id/settings"
             element={
