@@ -243,7 +243,7 @@ const AddAttractionModal = ({ tripId, cityId, city, members, onClose, onAdded, i
 
                     {/* DESCRIPTION */}
                     <div className="form-group">
-                        <label>Description <span className="optional">(optional)</span></label>
+                        <label>Description <span className="optional"></span></label>
                         <textarea
                             value={form.description}
                             onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
@@ -254,7 +254,7 @@ const AddAttractionModal = ({ tripId, cityId, city, members, onClose, onAdded, i
 
                     <div className="form-row">
                         <div className="form-group">
-                            <label>Estimated Cost <span className="optional">(optional)</span></label>
+                            <label>Estimated Total Cost <span className="optional"></span></label>
                             <input
                                 type="number"
                                 min={0}
@@ -265,7 +265,7 @@ const AddAttractionModal = ({ tripId, cityId, city, members, onClose, onAdded, i
                             />
                         </div>
                         <div className="form-group">
-                            <label>Link <span className="optional">(optional)</span></label>
+                            <label>Link <span className="optional"></span></label>
                             <input
                                 type="text"
                                 value={form.link}

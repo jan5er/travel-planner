@@ -102,7 +102,7 @@ const AddCityModal = ({ tripId, onClose, onAdded }) => {
                         <button type="button" className="btn-secondary" onClick={onClose}>
                             Cancel
                         </button>
-                        <button type="submit" className="btn-primary" disabled={!selected || loading}>
+                        <button className="btn-confirm" disabled={!selected || loading}>
                             {loading ? 'Adding...' : 'Add City'}
                         </button>
                     </div>

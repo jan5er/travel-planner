@@ -263,3 +263,83 @@ exports.updateNote = async (req, res) => {
         res.status(500).json({ message: 'Server error', error: err.message })
     }
 }
+
+exports.getExpenses = async (req, res) => {
+    try {
+        const trip = await Trip.findById(req.params.id)
+        if (!trip) return res.status(404).json({ message: 'Trip not found' })
+
+        const isMember = trip.members.some(m => m.user.toString() === req.user._id.toString())
+        if (!isMember) return res.status(403).json({ message: 'Not authorized' })
+
+        const Stay = require('../models/Stay')
+        const Transport = require('../models/Transport')
+        const Attraction = require('../models/Attraction')
+
+        const cities = await require('../models/City').find({ tripId: req.params.id })
+
+        const [stays, transports, attractions] = await Promise.all([
+            Stay.find({ tripId: req.params.id, isSelected: true }),
+            Transport.find({ tripId: req.params.id, isConfirmed: true }),
+            Attraction.find({ tripId: req.params.id })
+        ])
+
+        const perCity = {}
+        cities.forEach(city => {
+            perCity[city._id] = {
+                name: city.name,
+                stays: 0, transport: 0, attractions: 0, misc: 0,
+                total: 0, perPerson: {}
+            }
+        })
+
+        const perCategoryPerPerson = {
+            stays: {}, transport: {}, attractions: {}, misc: {}
+        }
+
+        const addExpense = (cityId, category, cost, splitWith) => {
+            const key = cityId?.toString()
+            if (!perCity[key]) return
+            perCity[key][category] += cost
+            perCity[key].total += cost
+            if (splitWith?.length) {
+                const share = cost / splitWith.length
+                splitWith.forEach(uid => {
+                    const uidStr = uid.toString()
+                    perCity[key].perPerson[uidStr] = (perCity[key].perPerson[uidStr] || 0) + share
+                    perCategoryPerPerson[category][uidStr] = (perCategoryPerPerson[category][uidStr] || 0) + share
+                })
+            }
+        }
+
+        stays.forEach(s => {
+            const cost = s.cost || 0
+            addExpense(s.cityId, 'stays', cost, s.splitWith)
+        })
+
+        transports.forEach(t => {
+            const cost = t.cost || 0
+            addExpense(t.cityId, 'transport', cost, t.splitWith)
+        })
+
+        attractions.forEach(a => {
+            const cost = a.cost || 0
+            addExpense(a.cityId, 'attractions', cost, a.splitWith)
+        })
+
+        const total = {
+            stays: 0, transport: 0, attractions: 0, misc: 0, grand: 0
+        }
+        Object.values(perCity).forEach(c => {
+            total.stays += c.stays
+            total.transport += c.transport
+            total.attractions += c.attractions
+            total.misc += c.misc
+            total.grand += c.total
+        })
+
+        res.json({ perCity, total, perCategoryPerPerson })
+    } catch (err) {
+        res.status(500).json({ message: 'Server error', error: err.message })
+    }
+}

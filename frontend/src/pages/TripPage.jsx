@@ -5,6 +5,10 @@ import AddCityModal from '../components/AddCityModal'
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, } from '@dnd-kit/core'
+import { arrayMove, SortableContext, horizontalListSortingStrategy, useSortable, } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import { useAuth } from '../context/AuthContext'
 
 const CITY_COLORS = [
     '#f7774f',
@@ -16,6 +20,33 @@ const CITY_COLORS = [
     '#a0f74f',
     '#4f8ef7',
 ]
+
+const SortableCityTab = ({ city, activeCity, onClick }) => {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: city._id })
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+        cursor: 'grab',
+    }
+
+    return (
+        <button
+            ref={setNodeRef}
+            style={{
+                ...style,
+                ...(activeCity === city._id ? { borderColor: city.color, color: city.color } : {})
+            }}
+            className={`city-tab ${activeCity === city._id ? 'active' : ''}`}
+            onClick={onClick}
+            {...attributes}
+            {...listeners}
+        >
+            {city.name}
+            {city.country && <span className="tab-country">{city.country}</span>}
+        </button>
+    )
+}
 
 const TripPage = () => {
     const { id, cityId } = useParams()
@@ -33,15 +64,45 @@ const TripPage = () => {
     const [editingTitle, setEditingTitle] = useState(false)
     const [titleValue, setTitleValue] = useState('')
     const [savingTrip, setSavingTrip] = useState(false)
+    const [expenses, setExpenses] = useState(null)
+    const { user } = useAuth()
+    const sensors = useSensors(useSensor(PointerSensor, {
+        activationConstraint: { distance: 8 }
+    }))
+
+    const handleDragEnd = async (event) => {
+        const { active, over } = event
+        if (!over || active.id === over.id) return
+        const oldIndex = cities.findIndex(c => c._id === active.id)
+        const newIndex = cities.findIndex(c => c._id === over.id)
+        const reordered = arrayMove(cities, oldIndex, newIndex).map((city, i) => ({ ...city, order: i }))
+        setCities(reordered)
+        try {
+            await api.patch(`/trips/${id}/cities/reorder`, reordered.map(c => ({ _id: c._id, order: c.order })))
+        } catch (err) {
+            console.error('Error reordering cities:', err)
+        }
+    }
+
+    const handleCityDateChange = async (cityId, field, value) => {
+        try {
+            const res = await api.patch(`/trips/cities/${cityId}`, { [field]: value || null })
+            setCities(prev => prev.map(c => c._id === cityId ? { ...c, [field]: res.data[field] } : c))
+        } catch (err) {
+            console.error('Error updating city date:', err)
+        }
+    }
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [tripRes, citiesRes] = await Promise.all([
+                const [tripRes, citiesRes, expensesRes] = await Promise.all([
                     api.get(`/trips/${id}`),
-                    api.get(`/trips/${id}/cities`)
+                    api.get(`/trips/${id}/cities`),
+                    api.get(`/trips/${id}/expenses`)
                 ])
                 setTrip(tripRes.data)
+                setExpenses(expensesRes.data)
                 const citiesWithColors = citiesRes.data.map((city, i) => ({
                     ...city,
                     color: city.color || CITY_COLORS[i % CITY_COLORS.length]
@@ -228,30 +289,28 @@ const TripPage = () => {
 
             {/* CITY TABS */}
             <div className="city-tabs-wrapper">
-                <div className="city-tabs">
-                    {cities.map(city => (
-                        <button
-                            key={city._id}
-                            className={`city-tab ${activeCity === city._id ? 'active' : ''}`}
-                            style={activeCity === city._id ? {
-                                borderColor: city.color,
-                                color: city.color,
-                            } : {}}
-                            onClick={() => {
-                                setActiveCity(city._id)
-                                localStorage.setItem(`trip-active-city-${id}`, city._id)
-                                navigate(`/trips/${id}/${city._id}`, { replace: true })
-                            }}
-                        >
-                            {city.name}
-                            {city.country && <span className="tab-country">{city.country}</span>}
-                        </button>
-                    ))}
-                    <button className="city-tab add-city-tab" onClick={() => setShowAddCity(true)}>
-                        + Add City
-                    </button>
-                </div>
-                <div 
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                    <SortableContext items={cities.map(c => c._id)} strategy={horizontalListSortingStrategy}>
+                        <div className="city-tabs">
+                            {cities.map(city => (
+                                <SortableCityTab
+                                    key={city._id}
+                                    city={city}
+                                    activeCity={activeCity}
+                                    onClick={() => {
+                                        setActiveCity(city._id)
+                                        localStorage.setItem(`trip-active-city-${id}`, city._id)
+                                        navigate(`/trips/${id}/${city._id}`, { replace: true })
+                                    }}
+                                />
+                            ))}
+                            <button className="city-tab add-city-tab" onClick={() => setShowAddCity(true)}>
+                                + Add City
+                            </button>
+                        </div>
+                    </SortableContext>
+                </DndContext>
+                <div
                     className="city-active-bar"
                     style={{ backgroundColor: activeCityData?.color || 'transparent' }}
                 />
@@ -275,14 +334,29 @@ const TripPage = () => {
                                 <span className="city-country">{activeCityData.country}</span>
                             )}
                         </div>
-                        {(activeCityData.dateFrom || activeCityData.dateTo) && (
-                            <span className="city-dates">
-                                {activeCityData.dateFrom && new Date(activeCityData.dateFrom).toLocaleDateString('en-GB')}
-                                {activeCityData.dateTo && ` → ${new Date(activeCityData.dateTo).toLocaleDateString('en-GB')}`}
-                            </span>
-                        )}
-                        <button 
-                            className="btn-danger" 
+                        <div className="city-dates-edit">
+                            <DatePicker
+                                className="date-input date-input-sm"
+                                selected={activeCityData.dateFrom ? new Date(activeCityData.dateFrom) : null}
+                                onChange={date => handleCityDateChange(activeCityData._id, 'dateFrom', date)}
+                                dateFormat="dd/MM/yyyy"
+                                placeholderText="Arrival"
+                                minDate={trip.startDate ? new Date(trip.startDate) : null}
+                                maxDate={trip.endDate ? new Date(trip.endDate) : null}
+                            />
+                            <span className="dates-arrow">→</span>
+                            <DatePicker
+                                className="date-input date-input-sm"
+                                selected={activeCityData.dateTo ? new Date(activeCityData.dateTo) : null}
+                                onChange={date => handleCityDateChange(activeCityData._id, 'dateTo', date)}
+                                dateFormat="dd/MM/yyyy"
+                                placeholderText="Departure"
+                                minDate={activeCityData.dateFrom ? new Date(activeCityData.dateFrom) : null}
+                                maxDate={trip.endDate ? new Date(trip.endDate) : null}
+                            />
+                        </div>
+                        <button
+                            className="btn-danger"
                             style={{ marginLeft: 'auto' }}
                             onClick={() => { setCityToDelete(activeCityData); setShowConfirmDeleteCity(true) }}
                         >
@@ -290,11 +364,11 @@ const TripPage = () => {
                         </button>
                     </div>
 
-                    {/* 4 SECTION CARDS - FULL WIDTH */}
+                    {/* SECTION CARDS */}
                     <div className="section-cards-row">
                         {[
-                            { label: 'Transport', icon: '✈️', path: 'transport', desc: 'Flights, trains, buses' },
                             { label: 'Stays', icon: '🏨', path: 'stays', desc: 'Hotels & accommodation' },
+                            { label: 'Transport', icon: '✈️', path: 'transport', desc: 'Flights, trains, buses' },
                             { label: 'Attractions', icon: '🗺️', path: 'attractions', desc: 'Things to see & do' },
                             { label: 'Misc', icon: '🍜', path: 'misc', desc: 'Food, shops & more' },
                         ].map(section => (
@@ -311,6 +385,99 @@ const TripPage = () => {
                             </div>
                         ))}
                     </div>
+
+                    {/* CITY EXPENSES */}
+                    {expenses && expenses.perCity[activeCityData._id] && (
+                        <div className="city-expenses">
+                            <h3 className="expenses-label">City Expenses</h3>
+                            <div className="expenses-table">
+                                <div className="expenses-table-header">
+                                    <span></span>
+                                    <span>Total</span>
+                                    <span>Your Share</span>
+                                </div>
+                                {[
+                                    { key: 'stays', icon: '🏨', label: 'Stays' },
+                                    { key: 'transport', icon: '✈️', label: 'Transport' },
+                                    { key: 'attractions', icon: '🗺️', label: 'Attractions' },
+                                    { key: 'misc', icon: '🍜', label: 'Misc' },
+                                ].map(({ key, icon, label }) => {
+                                    const total = expenses.total[key] || 0
+                                    const myShare = expenses.perCityByCategory?.[key]?.[user?._id] || 0
+                                    return (
+                                        <div key={key} className="expenses-table-row">
+                                            <span className="expenses-row-label">
+                                                <span className="expense-icon">{icon}</span>
+                                                {label}
+                                            </span>
+                                            <span className="expense-amount">€{total.toFixed(2)}</span>
+                                            <span className="expense-amount your-share-amount">
+                                                {total > 0 ? `€${myShare.toFixed(2)}` : '—'}
+                                            </span>
+                                        </div>
+                                    )
+                                })}
+                                <div className="expenses-table-row total">
+                                    <span className="expenses-row-label">
+                                    Total
+                                    </span>
+                                    <span className="expense-amount">
+                                        €{(expenses.perCity[activeCityData._id].total || 0).toFixed(2)}
+                                    </span>
+                                    <span className="expense-amount your-share-amount">
+                                        €{(expenses.perCity[activeCityData._id].perPerson?.[user?._id] || 0).toFixed(2)}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* TRIP TOTAL */}
+                    {expenses && (
+                        <div className="city-expenses trip-total">
+                            <h3 className="expenses-label">Trip Total</h3>
+                            <div className="expenses-table">
+                                <div className="expenses-table-header">
+                                    <span></span>
+                                    <span>Total</span>
+                                    <span>Your Share</span>
+                                </div>
+                                {[
+                                    { key: 'stays', icon: '🏨', label: 'Stays' },
+                                    { key: 'transport', icon: '✈️', label: 'Transport' },
+                                    { key: 'attractions', icon: '🗺️', label: 'Attractions' },
+                                    { key: 'misc', icon: '🍜', label: 'Misc' },
+                                ].map(({ key, icon, label }) => {
+                                    const total = expenses.total[key] || 0
+                                    const myShare = Object.values(expenses.perCity).reduce((sum, city) => {
+                                        return sum + (city.perPerson?.[user?._id] || 0)
+                                    }, 0)
+                                    return (
+                                        <div key={key} className="expenses-table-row">
+                                            <span className="expenses-row-label">
+                                                <span className="expense-icon">{icon}</span>
+                                                {label}
+                                            </span>
+                                            <span className="expense-amount">€{total.toFixed(2)}</span>
+                                            <span className="expense-amount your-share-amount">
+                                                {total > 0 ? `€${myShare.toFixed(2)}` : '—'}
+                                            </span>
+                                        </div>
+                                    )
+                                })}
+                                <div className="expenses-table-row total">
+                                    <span className="expenses-row-label">
+                                    Grand Total
+                                    </span>
+                                    <span className="expense-amount">€{(expenses.total.grand || 0).toFixed(2)}</span>
+                                    <span className="expense-amount your-share-amount">
+                                        €{Object.values(expenses.perCity).reduce((sum, city) =>
+                                            sum + (city.perPerson?.[user?._id] || 0), 0).toFixed(2)}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             ) : null}
 
