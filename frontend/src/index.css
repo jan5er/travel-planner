@@ -633,6 +633,11 @@ input[type="date"] {
     border-bottom: none;
     padding: 0 40px;
     overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    
+    /* Prepreči, da bi se layout sesedel, ko element zapusti svojo pozicijo */
+    min-height: 50px;
 }
 
 .city-tabs {
@@ -673,6 +678,7 @@ input[type="date"] {
     flex-direction: column;
     align-items: center;
     gap: 2px;
+    flex-shrink: 0;
 }
 
 .city-tab:hover {
