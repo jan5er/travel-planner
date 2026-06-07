@@ -402,8 +402,9 @@ const TripPage = () => {
                                     { key: 'attractions', icon: '🗺️', label: 'Attractions' },
                                     { key: 'misc', icon: '🍜', label: 'Misc' },
                                 ].map(({ key, icon, label }) => {
-                                    const total = expenses.total[key] || 0
-                                    const myShare = expenses.perCityByCategory?.[key]?.[user?._id] || 0
+                                    const cityExp = expenses.perCity[activeCityData._id]
+                                    const total = cityExp[key] || 0
+                                    const myShare = cityExp.perPersonByCategory?.[key]?.[user?._id] || 0
                                     return (
                                         <div key={key} className="expenses-table-row">
                                             <span className="expenses-row-label">
@@ -450,7 +451,8 @@ const TripPage = () => {
                                 ].map(({ key, icon, label }) => {
                                     const total = expenses.total[key] || 0
                                     const myShare = Object.values(expenses.perCity).reduce((sum, city) => {
-                                        return sum + (city.perPerson?.[user?._id] || 0)
+                                        const cityShareForCategory = city.perPersonByCategory?.[key]?.[user?._id] || 0
+                                        return sum + cityShareForCategory
                                     }, 0)
                                     return (
                                         <div key={key} className="expenses-table-row">

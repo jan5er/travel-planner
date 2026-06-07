@@ -289,7 +289,9 @@ exports.getExpenses = async (req, res) => {
             perCity[city._id] = {
                 name: city.name,
                 stays: 0, transport: 0, attractions: 0, misc: 0,
-                total: 0, perPerson: {}
+                total: 0, 
+                perPerson: {},
+                perPersonByCategory: {}
             }
         })
 
@@ -306,8 +308,20 @@ exports.getExpenses = async (req, res) => {
                 const share = cost / splitWith.length
                 splitWith.forEach(uid => {
                     const uidStr = uid.toString()
+
+                    // total per person per city
                     perCity[key].perPerson[uidStr] = (perCity[key].perPerson[uidStr] || 0) + share
-                    perCategoryPerPerson[category][uidStr] = (perCategoryPerPerson[category][uidStr] || 0) + share
+
+                    // per category per person per city
+                    if (!perCity[key].perPersonByCategory[category]) {
+                        perCity[key].perPersonByCategory[category] = {}
+                    }
+                    perCity[key].perPersonByCategory[category][uidStr] = 
+                        (perCity[key].perPersonByCategory[category][uidStr] || 0) + share
+
+                    // global per category per person
+                    perCategoryPerPerson[category][uidStr] = 
+                        (perCategoryPerPerson[category][uidStr] || 0) + share
                 })
             }
         }
