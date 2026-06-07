@@ -63,6 +63,7 @@ const createArrowIcon = (color, bearing) => L.divIcon({
     "></div>`,
     iconSize: [12, 12],
     iconAnchor: [6, 6],
+    pane: 'popupPane'
 });
 
 const calculateBearing = (from, to) => {
@@ -407,9 +408,10 @@ const TransportPage = () => {
                                 const forwardBearing = calculateBearing(forwardPreTarget, forwardTarget);
 
                                 let returnBearing = 0;
+                                let returnPreTarget = null;
                                 if (returnPoints) {
                                     const returnTarget = returnPoints[returnPoints.length - 1];
-                                    const returnPreTarget = returnPoints[returnPoints.length - 3] || returnPoints[0];
+                                    returnPreTarget = returnPoints[returnPoints.length - 3] || returnPoints[0];
                                     returnBearing = calculateBearing(returnPreTarget, returnTarget);
                                 }
 
@@ -420,7 +422,7 @@ const TransportPage = () => {
                                             pathOptions={{ color, weight: 2, dashArray: t.isConfirmed ? null : '6 4', opacity: t.isConfirmed ? 1 : 0.5 }}
                                         />
                                         
-                                        <Marker position={coords.to} icon={createArrowIcon(color, forwardBearing)} interactive={false} />
+                                        <Marker position={forwardPreTarget} icon={createArrowIcon(color, forwardBearing)} interactive={false} />
 
                                         {t.isReturn && (
                                             <>
@@ -428,7 +430,13 @@ const TransportPage = () => {
                                                     positions={returnPoints}
                                                     pathOptions={{ color, weight: 2, dashArray: t.isConfirmed ? null : '6 4', opacity: t.isConfirmed ? 0.8 : 0.4 }}
                                                 />
-                                                <Marker position={coords.from} icon={createArrowIcon(color, returnBearing)} interactive={false} />
+                                                {returnPreTarget && (
+                                                    <Marker 
+                                                        position={returnPreTarget} 
+                                                        icon={createArrowIcon(color, returnBearing)} 
+                                                        interactive={false} 
+                                                    />
+                                                )}
                                             </>
                                         )}
                                         <Marker position={coords.from} icon={createColorIcon(color, false)}>
