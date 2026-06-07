@@ -6,7 +6,7 @@ const mongoose = require('mongoose')
 exports.createTrip = async (req, res) => {
     // console.log('req.user:', req.user)
     try {
-        const { title } = req.body;
+        const { title, description, startDate, endDate } = req.body;
         if (!title) {
             return res.status(400).json({ message: 'Title is required' });
         }
@@ -16,6 +16,9 @@ exports.createTrip = async (req, res) => {
             title,
             createdBy: req.user._id,
             members: [{ user: req.user._id, color }],
+            description,
+            startDate,
+            endDate
         });
         console.log('Created trip:', trip);
         res.status(201).json(trip);
