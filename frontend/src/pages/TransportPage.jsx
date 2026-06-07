@@ -49,6 +49,36 @@ const createColorIcon = (color, selected) => L.divIcon({
     iconAnchor: [selected ? 9 : 7, selected ? 9 : 7],
 })
 
+const createArrowIcon = (color, bearing) => L.divIcon({
+    className: 'route-arrowhead-marker',
+    html: `<div style="
+        transform: rotate(${bearing}deg);
+        width: 0; 
+        height: 0; 
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-bottom: 12px solid ${color};
+        filter: drop-shadow(0px 1px 2px rgba(0,0,0,0.4));
+        background: transparent;
+    "></div>`,
+    iconSize: [12, 12],
+    iconAnchor: [6, 6],
+});
+
+const calculateBearing = (from, to) => {
+    const lat1 = from[0] * Math.PI / 180;
+    const lat2 = to[0] * Math.PI / 180;
+    const lon1 = from[1] * Math.PI / 180;
+    const lon2 = to[1] * Math.PI / 180;
+
+    const y = Math.sin(lon2 - lon1) * Math.cos(lat2);
+    const x = Math.cos(lat1) * Math.sin(lat2) -
+              Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1);
+    
+    const angle = Math.atan2(y, x) * 180 / Math.PI;
+    return (angle + 360) % 360;
+};
+
 const TransportPage = () => {
     const { id, cityId } = useParams()
     const navigate = useNavigate()
@@ -65,16 +95,20 @@ const TransportPage = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
+                const endpoint = cityId === 'trip' ? `/transports/trip?tripId=${id}` : `/transports/${cityId}`
+                
                 const [tripRes, citiesRes, transportsRes] = await Promise.all([
                     api.get(`/trips/${id}`),
                     api.get(`/trips/${id}/cities`),
-                    api.get(`/transports/${cityId}`)
+                    api.get(endpoint)
                 ])
                 setTrip(tripRes.data)
                 setCities(citiesRes.data)
-                const currentCity = citiesRes.data.find(c => c._id === cityId)
-                setCity(currentCity)
-                console.log(currentCity)
+                
+                if (cityId && cityId !== 'trip') {
+                    const currentCity = citiesRes.data.find(c => c._id === cityId)
+                    setCity(currentCity)
+                }
                 setTransports(transportsRes.data)
             } catch (err) {
                 console.error('Error fetching transport:', err)
@@ -121,9 +155,32 @@ const TransportPage = () => {
         return (transport.cost / transport.splitWith.length || 1).toFixed(2)
     }
 
-    const getCityName = (cityId) => {
-        const city = cities.find(c => c._id === cityId)
+    const getCityName = (idField) => {
+        if (!idField) return null
+        const targetId = idField?._id || idField
+        const city = cities.find(c => c._id === targetId)
         return city?.name || null
+    }
+
+    const getTransportCoords = (transport) => {
+        const fromCityRaw = cities.find(c => c._id === (transport.fromCityId?._id || transport.fromCityId))
+        const toCityRaw = cities.find(c => c._id === (transport.toCityId?._id || transport.toCityId))
+
+        const fromLat = fromCityRaw?.coordinates?.lat || transport.fromCoordinates?.lat
+        const fromLng = fromCityRaw?.coordinates?.lng || transport.fromCoordinates?.lon || transport.fromCoordinates?.lng
+
+        const toLat = toCityRaw?.coordinates?.lat || transport.toCoordinates?.lat
+        const toLng = toCityRaw?.coordinates?.lng || transport.toCoordinates?.lon || transport.toCoordinates?.lng
+
+        if (fromLat && fromLng && toLat && toLng) {
+            return {
+                from: [fromLat, fromLng],
+                to: [toLat, toLng],
+                fromName: fromCityRaw?.name || transport.from,
+                toName: toCityRaw?.name || transport.to
+            }
+        }
+        return null
     }
 
     const confirmed = transports.filter(t => t.isConfirmed).sort((a, b) => new Date(a.departure) - new Date(b.departure))
@@ -135,7 +192,7 @@ const TransportPage = () => {
     const renderTransportCard = (transport) => {
         const color = getMemberColor(transport.addedBy?._id || transport.addedBy)
         const pp = perPerson(transport)
-        const isOrigin = transport.cityId === cityId || transport.cityId?._id === cityId
+        const isOrigin = cityId && (transport.cityId === cityId || transport.cityId?._id === cityId)
 
         return (
             <div
@@ -143,7 +200,6 @@ const TransportPage = () => {
                 className={`stay-card ${transport.isConfirmed ? 'selected' : ''}`}
                 style={transport.isConfirmed ? { borderColor: color, boxShadow: `0 0 16px ${color}20` } : {}}
             >
-                {/* CONFIRM BUTTON */}
                 <button
                     className={`stay-select-btn ${transport.isConfirmed ? 'checked' : ''}`}
                     style={transport.isConfirmed ? { borderColor: color, backgroundColor: color } : {}}
@@ -156,7 +212,6 @@ const TransportPage = () => {
                 <div className="stay-card-content">
                     <div className="stay-card-top">
                         <div className="stay-card-main">
-                            {/* TYPE + ROUTE */}
                             <div className="transport-route">
                                 <span className="transport-icon">{TRANSPORT_ICONS[transport.type]}</span>
                                 <div className="transport-route-info">
@@ -170,22 +225,21 @@ const TransportPage = () => {
                                                 {transport.from} → {transport.to}{transport.quantity > 1 ? ` (${transport.quantity})` : ''}
                                             </span>
                                         )}
-                                        {!isOrigin && (
-                                            <span className="transport-origin-badge">via {getCityName(transport.cityId) || 'other city'}</span>
+                                        {!isOrigin && transport.cityId && (
+                                            <span className="transport-origin-badge">via {getCityName(transport.cityId) || 'other location'}</span>
                                         )}
                                     </div>
                                     <span className="transport-type-label">{transport.type.charAt(0).toUpperCase() + transport.type.slice(1)}</span>
                                 </div>
                             </div>
 
-                            {/* TIMES */}
                             {(transport.departure || transport.arrival) && (
                                 <div className="transport-times">
                                     {transport.departure && transport.arrival ? (
                                         <span className="stay-dates">
-                                            {new Date(transport.departure).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}{' '}
-                                            {new Date(transport.departure).toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-                                            {' -----['}
+                                            {'<DEPARTURE> ' + new Date(transport.departure).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}{' '}
+                                            {'[' + new Date(transport.departure).toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit' }) + ']'}
+                                            {'-----['}
                                             {(() => {
                                                 const durationMs = Math.max(0, new Date(transport.arrival) - new Date(transport.departure));
                                                 const totalMinutes = Math.floor(durationMs / 60000);
@@ -199,24 +253,23 @@ const TransportPage = () => {
                                                     minutes ? `${minutes}m` : null,
                                                 ].filter(Boolean).join(' ') || '0m';
                                             })()}
-                                            {']-----> '}
-                                            {new Date(transport.arrival).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}{' '}
-                                            {new Date(transport.arrival).toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                                            {']----->'}
+                                            {'[' + new Date(transport.arrival).toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit' }) + '] '}
+                                            {new Date(transport.arrival).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' <ARRIVAL>'}
                                         </span>
                                     ) : transport.departure ? (
                                         <span className="stay-dates">
-                                            🛫 {new Date(transport.departure).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                            Departure: {new Date(transport.departure).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                         </span>
                                     ) : (
                                         <span className="stay-dates">
-                                            🛬 {new Date(transport.arrival).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                            Arrival: {new Date(transport.arrival).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                         </span>
                                     )}
                                 </div>
                             )}
                         </div>
 
-                        {/* COST */}
                         {transport.cost > 0 && (
                             <div className="stay-cost-block">
                                 <span className="stay-total">€{(transport.cost).toFixed(2)}</span>
@@ -225,7 +278,6 @@ const TransportPage = () => {
                         )}
                     </div>
 
-                    {/* SPLIT WITH */}
                     {transport.splitWith?.length > 0 && (
                         <div className="stay-split">
                             <span className="split-label">Split:</span>
@@ -260,7 +312,6 @@ const TransportPage = () => {
                     {transport.note && <p className="stay-notes">{transport.note}</p>}
                 </div>
 
-                {/* ACTIONS */}
                 <div className="stay-card-actions">
                     <div
                         className="member-avatar"
@@ -285,12 +336,14 @@ const TransportPage = () => {
     return (
     <div className="section-page">
         <header className="trip-header">
-            <button className="btn-back" style={{ height: "-webkit-fill-available" }} onClick={() => navigate(backCityId ? `/trips/${id}/${backCityId}` : `/trips/${id}`)}>Back</button>
+            <button className="btn-back" style={{ height: "-webkit-fill-available" }} onClick={() => navigate(backCityId && backCityId !== 'trip' ? `/trips/${id}/${backCityId}` : `/trips/${id}`)}>Back</button>
             <div className="trip-header-info">
                 <h1>Transport</h1>
-                <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                    {city?.name}{city?.country && `, ${city.country}`}
-                </span>
+                {city && (
+                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                        {city.name}{city.country && `, ${city.country}`}
+                    </span>
+                )}
             </div>
             <button className="btn-primary" style={{ alignSelf: 'center' }} onClick={() => setShowAddModal(true)}>+ Add Transport</button>
         </header>
@@ -305,13 +358,13 @@ const TransportPage = () => {
                 <>
                     {confirmed.length > 0 && (
                         <div className="stays-group">
-                            <h2 className="stays-group-label">✓ Confirmed</h2>
+                            <h2 className="stays-group-label">Confirmed</h2>
                             {confirmed.map(renderTransportCard)}
                         </div>
                     )}
                     {unconfirmed.length > 0 && (
                         <div className="stays-group">
-                            <h2 className="stays-group-label">Unconfirmed</h2>
+                            <h2 className="stays-group-label">Planned</h2>
                             {unconfirmed.map(renderTransportCard)}
                         </div>
                     )}
@@ -320,25 +373,15 @@ const TransportPage = () => {
 
             {/* MAP */}
             {(() => {
-                const routeTransports = transports.filter(t => {
-                    const fromCity = cities.find(c => c._id === (t.fromCityId?._id || t.fromCityId))
-                    const toCity = cities.find(c => c._id === (t.toCityId?._id || t.toCityId))
-                    return fromCity?.coordinates?.lat && toCity?.coordinates?.lat
-                })
+                const mappedRoutes = transports
+                    .map(t => ({ transport: t, coords: getTransportCoords(t) }))
+                    .filter(item => item.coords !== null);
 
-                if (routeTransports.length === 0) return null
+                if (mappedRoutes.length === 0) return null;
 
-                const allCoords = routeTransports.flatMap(t => {
-                    const fromCity = cities.find(c => c._id === (t.fromCityId?._id || t.fromCityId))
-                    const toCity = cities.find(c => c._id === (t.toCityId?._id || t.toCityId))
-                    return [
-                        [fromCity.coordinates.lat, fromCity.coordinates.lng],
-                        [toCity.coordinates.lat, toCity.coordinates.lng]
-                    ]
-                })
-
-                const centerLat = allCoords.reduce((s, c) => s + c[0], 0) / allCoords.length
-                const centerLng = allCoords.reduce((s, c) => s + c[1], 0) / allCoords.length
+                const allCoords = mappedRoutes.flatMap(item => [item.coords.from, item.coords.to]);
+                const centerLat = allCoords.reduce((s, c) => s + c[0], 0) / allCoords.length;
+                const centerLng = allCoords.reduce((s, c) => s + c[1], 0) / allCoords.length;
 
                 return (
                     <div className="stays-map-wrapper">
@@ -353,30 +396,46 @@ const TransportPage = () => {
                                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                                 attribution='&copy; OpenStreetMap contributors'
                             />
-                            {routeTransports.map(t => {
-                                const fromCity = cities.find(c => c._id === (t.fromCityId?._id || t.fromCityId))
-                                const toCity = cities.find(c => c._id === (t.toCityId?._id || t.toCityId))
-                                const color = getMemberColor(t.addedBy?._id || t.addedBy)
-                                const from = [fromCity.coordinates.lat, fromCity.coordinates.lng]
-                                const to = [toCity.coordinates.lat, toCity.coordinates.lng]
+                            {mappedRoutes.map(({ transport: t, coords }) => {
+                                const color = getMemberColor(t.addedBy?._id || t.addedBy);
+
+                                const forwardPoints = getCurvedPoints(coords.from, coords.to, t.isReturn ? 0.3 : 0.15, 1);
+                                const returnPoints = t.isReturn ? getCurvedPoints(coords.to, coords.from, 0.3, 1) : null;
+
+                                const forwardTarget = forwardPoints[forwardPoints.length - 1];
+                                const forwardPreTarget = forwardPoints[forwardPoints.length - 3] || forwardPoints[0]; 
+                                const forwardBearing = calculateBearing(forwardPreTarget, forwardTarget);
+
+                                let returnBearing = 0;
+                                if (returnPoints) {
+                                    const returnTarget = returnPoints[returnPoints.length - 1];
+                                    const returnPreTarget = returnPoints[returnPoints.length - 3] || returnPoints[0];
+                                    returnBearing = calculateBearing(returnPreTarget, returnTarget);
+                                }
 
                                 return (
                                     <div key={t._id}>
                                         <Polyline
-                                            positions={t.isReturn ? getCurvedPoints(from, to, 0.3, 1) : [from, to]}
+                                            positions={forwardPoints}
                                             pathOptions={{ color, weight: 2, dashArray: t.isConfirmed ? null : '6 4', opacity: t.isConfirmed ? 1 : 0.5 }}
                                         />
+                                        
+                                        <Marker position={coords.to} icon={createArrowIcon(color, forwardBearing)} interactive={false} />
+
                                         {t.isReturn && (
-                                            <Polyline
-                                                positions={getCurvedPoints(to, from, 0.3, 1)}
-                                                pathOptions={{ color, weight: 2, dashArray: t.isConfirmed ? null : '6 4', opacity: t.isConfirmed ? 0.8 : 0.4 }}
-                                            />
+                                            <>
+                                                <Polyline
+                                                    positions={returnPoints}
+                                                    pathOptions={{ color, weight: 2, dashArray: t.isConfirmed ? null : '6 4', opacity: t.isConfirmed ? 0.8 : 0.4 }}
+                                                />
+                                                <Marker position={coords.from} icon={createArrowIcon(color, returnBearing)} interactive={false} />
+                                            </>
                                         )}
-                                        <Marker position={from} icon={createColorIcon(color, false)}>
-                                            <Popup>{fromCity.name}</Popup>
+                                        <Marker position={coords.from} icon={createColorIcon(color, false)}>
+                                            <Popup>{coords.fromName}</Popup>
                                         </Marker>
-                                        <Marker position={to} icon={createColorIcon(color, t.isConfirmed)}>
-                                            <Popup>{toCity.name}</Popup>
+                                        <Marker position={coords.to} icon={createColorIcon(color, t.isConfirmed)}>
+                                            <Popup>{coords.toName}</Popup>
                                         </Marker>
                                     </div>
                                 )
@@ -390,7 +449,7 @@ const TransportPage = () => {
         {(showAddModal || transportToEdit) && trip && (
             <AddTransportModal
                 tripId={id}
-                cityId={cityId}
+                cityId={cityId === 'trip' ? null : cityId}
                 cities={cities}
                 members={trip.members}
                 tripStartDate={trip.startDate}
@@ -422,4 +481,4 @@ const TransportPage = () => {
     )
 }
 
-export default TransportPage
+export default TransportPage;

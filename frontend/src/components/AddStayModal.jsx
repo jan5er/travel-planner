@@ -266,7 +266,7 @@ const AddStayModal = ({ tripId, cityId, members, tripStartDate, tripEndDate, onC
 
                     <div className="modal-actions">
                         <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
-                        <button type="submit" className="btn-primary" disabled={loading}>
+                        <button className="btn-confirm" disabled={loading}>
                             {loading ? 'Saving...' : initialData ? 'Save Changes' : 'Add Stay'}
                         </button>
                     </div>

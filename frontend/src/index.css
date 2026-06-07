@@ -1965,21 +1965,55 @@ textarea:focus {
 }
 
 .checkbox-label {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 10px;
     cursor: pointer;
-    font-size: 0.9rem;
-    color: var(--text-primary);
+    font-size: 0.95rem;
+    color: var(--text-primary, #333);
+    user-select: none;
+    line-height: 1.2;
 }
 
 .checkbox-label input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    accent-color: var(--accent);
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px; 
+    height: 18px;
+    border: 2px solid var(--text-secondary, #888);
+    border-radius: 4px;
+    outline: none;
+    background-color: transparent;
     cursor: pointer;
+    display: inline-grid;
+    place-content: center;
+    transition: all 0.2s ease-in-out;
+    flex-shrink: 0;
 }
 
+.checkbox-label:hover input[type="checkbox"] {
+    border-color: var(--accent, #007bff);
+    box-shadow: 0 0 4px rgba(0, 123, 255, 0.2);
+}
+
+.checkbox-label input[type="checkbox"]:checked {
+    background-color: var(--accent, #007bff);
+    border-color: var(--accent, #007bff);
+}
+
+.checkbox-label input[type="checkbox"]::before {
+    content: "";
+    width: 9px; 
+    height: 5px;
+    border-left: 2px solid #fff;
+    border-bottom: 2px solid #fff;
+    transform: rotate(-45deg) scale(0) translate(0.5px, -0.5px);
+    transition: transform 0.1s ease-in-out;
+    transform-origin: center;
+}
+
+.checkbox-label input[type="checkbox"]:checked::before {
+    transform: rotate(-45deg) scale(1) translate(0.5px, -0.5px);
+}
 .suggestion-group-label {
     padding: 6px 14px 4px;
     font-size: 0.72rem;
@@ -1989,6 +2023,18 @@ textarea:focus {
     color: var(--text-secondary);
     cursor: default;
     pointer-events: none;
+}
+
+.leaflet-marker-icon.route-arrowhead-marker {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+}
+
+.route-arrowhead-marker div {
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
 }
 
 

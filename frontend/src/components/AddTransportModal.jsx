@@ -46,11 +46,11 @@ const LocationInput = ({ label, value, onChange, cities, excludeCityId, placehol
         }, 400)
     }, [query])
 
-    const handleSelect = (name, cityId = null) => {
+    const handleSelect = (name, cityId = null, coordinates = null) => {
         setQuery(name)
         setShowDropdown(false)
         setSuggestions([])
-        onChange(name, cityId)
+        onChange(name, cityId, coordinates)
     }
 
     const showAny = showDropdown && (filteredCities.length > 0 || suggestions.length > 0 || searching)
@@ -62,7 +62,11 @@ const LocationInput = ({ label, value, onChange, cities, excludeCityId, placehol
                 <input
                     type="text"
                     value={query}
-                    onChange={e => { setQuery(e.target.value); setShowDropdown(true); onChange(e.target.value, null) }}
+                    onChange={e => { 
+                        setQuery(e.target.value); 
+                        setShowDropdown(true); 
+                        onChange(e.target.value, null, null) 
+                    }}
                     onFocus={() => setShowDropdown(true)}
                     onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
                     placeholder={placeholder}
@@ -74,7 +78,7 @@ const LocationInput = ({ label, value, onChange, cities, excludeCityId, placehol
                             <>
                                 <li className="suggestion-group-label">Trip Cities</li>
                                 {filteredCities.map(c => (
-                                    <li key={c._id} onMouseDown={() => handleSelect(c.name, c._id)}>
+                                    <li key={c._id} onMouseDown={() => handleSelect(c.name, c._id, null)}>
                                         <span className="suggestion-name">{c.name}</span>
                                         <span className="suggestion-country">{c.country}</span>
                                     </li>
@@ -84,15 +88,19 @@ const LocationInput = ({ label, value, onChange, cities, excludeCityId, placehol
                         {suggestions.length > 0 && (
                             <>
                                 <li className="suggestion-group-label">Other Places</li>
-                                {suggestions.map(place => (
-                                    <li key={place.place_id} onMouseDown={() => handleSelect(
-                                        place.display_name.split(',').slice(0, 2).join(',').trim(),
-                                        null
-                                    )}>
-                                        <span className="suggestion-name">{place.display_name.split(',')[0]}</span>
-                                        <span className="suggestion-country">{place.display_name.split(',').slice(1).join(',').trim()}</span>
-                                    </li>
-                                ))}
+                                {suggestions.map(place => {
+                                    const parsedName = place.display_name.split(',').slice(0, 2).join(',').trim();
+                                    const coords = {
+                                        lat: parseFloat(place.lat),
+                                        lon: parseFloat(place.lon)
+                                    };
+                                    return (
+                                        <li key={place.place_id} onMouseDown={() => handleSelect(parsedName, null, coords)}>
+                                            <span className="suggestion-name">{place.display_name.split(',')[0]}</span>
+                                            <span className="suggestion-country">{place.display_name.split(',').slice(1).join(',').trim()}</span>
+                                        </li>
+                                    );
+                                })}
                             </>
                         )}
                     </ul>
@@ -109,6 +117,8 @@ const AddTransportModal = ({ tripId, cityId, fromCityId, toCityId, cities, membe
         to: initialData?.to || '',
         toCityId: initialData?.toCityId || '',
         fromCityId: initialData?.fromCityId || '',
+        fromCoordinates: initialData?.fromCoordinates || null,
+        toCoordinates: initialData?.toCoordinates || null,
         link: initialData?.link || '',
         departure: initialData?.departure ? new Date(initialData.departure) : null,
         arrival: initialData?.arrival ? new Date(initialData.arrival) : null,
@@ -139,27 +149,26 @@ const AddTransportModal = ({ tripId, cityId, fromCityId, toCityId, cities, membe
         e.preventDefault()
         setError('')
         setLoading(true)
-        const fromValue = form.from === '__custom__' ? form.fromCustom : form.from
-        const toValue = form.to === '__custom__' ? form.toCustom : form.to
         
         try {
             let res
-            if (!fromValue || !toValue) {
+            if (!form.from || !form.to) {
                 setError('From and To are required')
                 setLoading(false)
                 return
             }
 
+            const payload = {
+                ...form,
+                cost: parseFloat(form.cost) || 0
+            }
+
             if (initialData) {
-                res = await api.patch(`/transports/${initialData._id}`, {
-                    ...form,
-                    cost: parseFloat(form.cost) || 0
-                })
+                res = await api.patch(`/transports/${initialData._id}`, payload)
             } else {
-                res = await api.post(`/transports/${cityId}`, {
-                    ...form,
-                    tripId,
-                    cost: parseFloat(form.cost) || 0
+                res = await api.post(`/transports/${cityId || 'trip'}`, {
+                    ...payload,
+                    tripId
                 })
             }
             onAdded(res.data)
@@ -211,7 +220,12 @@ const AddTransportModal = ({ tripId, cityId, fromCityId, toCityId, cities, membe
                             cities={cities}
                             excludeCityId={form.toCityId}
                             placeholder="Search or select city..."
-                            onChange={(name, cityId) => setForm(f => ({ ...f, from: name, fromCityId: cityId }))}
+                            onChange={(name, cityId, coordinates) => setForm(f => ({ 
+                                ...f, 
+                                from: name, 
+                                fromCityId: cityId,
+                                fromCoordinates: coordinates // hrani {lat, lon} ali null
+                            }))}
                         />
                         <LocationInput
                             label="To"
@@ -219,7 +233,12 @@ const AddTransportModal = ({ tripId, cityId, fromCityId, toCityId, cities, membe
                             cities={cities}
                             excludeCityId={form.fromCityId}
                             placeholder="Search or select city..."
-                            onChange={(name, cityId) => setForm(f => ({ ...f, to: name, toCityId: cityId }))}
+                            onChange={(name, cityId, coordinates) => setForm(f => ({ 
+                                ...f, 
+                                to: name, 
+                                toCityId: cityId,
+                                toCoordinates: coordinates // hrani {lat, lon} ali null
+                            }))}
                         />
                     </div>
 
@@ -230,14 +249,14 @@ const AddTransportModal = ({ tripId, cityId, fromCityId, toCityId, cities, membe
                                 checked={form.isReturn}
                                 onChange={e => setForm(f => ({ ...f, isReturn: e.target.checked }))}
                             />
-                            <span>Return trip <span className="optional">(e.g. day trip — comes back to origin)</span></span>
+                            <span style={{ marginLeft: '5%', fontSize: '1rem', paddingTop: '5%' }}>Return trip <span className="optional">(e.g. day trip — comes back to origin)</span></span>
                         </label>
                     </div>
 
                     {/* DEPARTURE / ARRIVAL */}
                     <div className="form-row">
                         <div className="form-group">
-                            <label>Departure <span className="optional"></span></label>
+                            <label>Departure</label>
                             <DatePicker
                                 className="date-input"
                                 selected={form.departure}
@@ -252,7 +271,7 @@ const AddTransportModal = ({ tripId, cityId, fromCityId, toCityId, cities, membe
                             />
                         </div>
                         <div className="form-group">
-                            <label>Arrival <span className="optional"></span></label>
+                            <label>Arrival</label>
                             <DatePicker
                                 className="date-input"
                                 selected={form.arrival}
@@ -270,7 +289,7 @@ const AddTransportModal = ({ tripId, cityId, fromCityId, toCityId, cities, membe
 
                     {/* BOOKING LINK */}
                     <div className="form-group">
-                        <label>Booking Link <span className="optional"></span></label>
+                        <label>Booking Link</label>
                         <input
                             type="text"
                             value={form.link}
@@ -282,7 +301,7 @@ const AddTransportModal = ({ tripId, cityId, fromCityId, toCityId, cities, membe
                     {/* COST + QUANTITY */}
                     <div className="form-row">
                         <div className="form-group">
-                            <label>Total Cost <span className="optional"></span></label>
+                            <label>Total Cost</label>
                             <input
                                 type="number"
                                 min={0}
@@ -334,7 +353,7 @@ const AddTransportModal = ({ tripId, cityId, fromCityId, toCityId, cities, membe
                         </div>
                         {perPerson() && (
                             <p className="per-person-preview">
-                                <span>Total:  <strong>€{(parseFloat(form.cost).toFixed(2))}</strong> · </span>
+                                <span>Total: <strong>€{(parseFloat(form.cost).toFixed(2))}</strong> · </span>
                                 Per person: <strong>€{perPerson()}</strong> ({form.splitWith.length} {form.splitWith.length === 1 ? 'person' : 'people'})
                             </p>
                         )}
@@ -342,7 +361,7 @@ const AddTransportModal = ({ tripId, cityId, fromCityId, toCityId, cities, membe
 
                     {/* NOTE */}
                     <div className="form-group">
-                        <label>Note <span className="optional"></span></label>
+                        <label>Note</label>
                         <textarea
                             value={form.note}
                             onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
@@ -353,7 +372,7 @@ const AddTransportModal = ({ tripId, cityId, fromCityId, toCityId, cities, membe
 
                     <div className="modal-actions">
                         <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
-                        <button type="submit" className="btn-primary" disabled={loading}>
+                        <button type="button" className="btn-confirm" disabled={loading}>
                             {loading ? 'Saving...' : initialData ? 'Save Changes' : 'Add Transport'}
                         </button>
                     </div>

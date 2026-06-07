@@ -2,12 +2,20 @@ const mongoose = require('mongoose');
 
 const TransportSchema = new mongoose.Schema({
     tripId: { type: mongoose.Schema.Types.ObjectId, ref: 'Trip', required: true },
-    cityId: { type: mongoose.Schema.Types.ObjectId, ref: 'City', required: true },
+    cityId: { type: mongoose.Schema.Types.ObjectId, ref: 'City' },
     fromCityId: { type: mongoose.Schema.Types.ObjectId, ref: 'City' },
     toCityId: { type: mongoose.Schema.Types.ObjectId, ref: 'City' },
     type: { type: String, enum: ['flight', 'train', 'bus', 'car', 'ferry', 'other'], required: true },
     from: { type: String, required: true },
     to: { type: String, required: true },
+    fromCoordinates: {
+        lat: { type: Number },
+        lon: { type: Number }
+    },
+    toCoordinates: {
+        lat: { type: Number },
+        lon: { type: Number }
+    },
     link: { type: String, trim: true },
     departure: { type: Date },
     arrival: { type: Date },
