@@ -2320,6 +2320,224 @@ textarea:focus {
     font-weight: 400;
 }
 
+/* CHARTS */
+.charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 0;
+}
+
+.chart-card {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+}
+
+.chart-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+}
+
+.chart-total {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 8px;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.chart-tooltip {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    font-size: 0.82rem;
+}
+
+.chart-tooltip-label {
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--text-primary);
+}
+
+/* PEOPLE BARS */
+.people-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 8px;
+}
+
+.people-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.people-bar-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100px;
+    flex-shrink: 0;
+    font-size: 0.82rem;
+    color: var(--text-primary);
+}
+
+.people-bar-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.people-bar-track {
+    flex: 1;
+    height: 8px;
+    background: var(--bg-card);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.people-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s ease;
+}
+
+.people-bar-amount {
+    font-size: 0.82rem;
+    font-family: 'Courier New', Courier, monospace;
+    color: var(--text-secondary);
+    width: 70px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+/* EXPENSE SUMMARY CARDS */
+.expense-summary-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.expense-summary-card {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.expense-summary-card:hover {
+    border-color: var(--border-accent);
+}
+
+.expense-summary-card.active {
+    transform: translateY(-2px);
+}
+
+.expense-summary-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.expense-summary-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.expense-summary-label {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+}
+
+.expense-summary-total {
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.expense-summary-share {
+    font-size: 0.72rem;
+    color: var(--accent);
+    font-family: 'Courier New', Courier, monospace;
+}
+
+/* CHART FILTERS */
+.chart-filters {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.chart-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.chart-card-header .chart-title {
+    margin-bottom: 0;
+}
+
+/* CHART TOGGLE */
+.chart-toggle {
+    display: flex;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.chart-toggle-btn {
+    background: transparent;
+    border: none;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.chart-toggle-btn.active {
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+}
+
+/* PEOPLE BAR AVATAR */
+.people-bar-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
 
 
 

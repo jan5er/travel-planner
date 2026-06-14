@@ -4,7 +4,7 @@ const auth = require('../middleware/auth')
 const {
     createTrip, getTrips, getTrip, updateTrip, deleteTrip, addMember, removeMember, 
     generateInvite, joinByInvite, updateMemberColor, addNote, deleteNote, updateNote, getExpenses,
-    addGuest, removeGuest
+    addGuest, removeGuest, getMiscByDate
 } = require('../controllers/tripController')
 
 router.use(auth); // Dejansko moramo biti za vse te route prijavljeni tako da lahko dodamo samo en auth middleware na vrh v use
@@ -28,5 +28,7 @@ router.get('/:id/expenses', getExpenses)
 
 router.post('/:id/guests', addGuest)
 router.delete('/:id/guests/:guestId', removeGuest)
+
+router.get('/:id/misc-by-date', getMiscByDate)
 
 module.exports = router

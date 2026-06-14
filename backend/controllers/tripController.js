@@ -369,7 +369,20 @@ exports.getExpenses = async (req, res) => {
             total.grand += c.total
         })
 
-        res.json({ perCity, total, perCategoryPerPerson })
+        await trip.populate('members.user', 'username name avatar')
+
+        res.json({ 
+            perCity, 
+            total, 
+            perCategoryPerPerson,
+            members: trip.members.map(m => ({ 
+                _id: m.user._id.toString(), 
+                name: m.user.name || m.user.username, 
+                color: m.color,
+                avatar: m.user.avatar
+            })),
+            guests: trip.guests?.map(g => ({ _id: g._id, name: g.name, color: g.color })) || []
+        })
     } catch (err) {
         res.status(500).json({ message: 'Server error', error: err.message })
     }
@@ -408,7 +421,7 @@ exports.removeGuest = async (req, res) => {
         await trip.save()
 
         /*
-                await Misc.updateMany({ tripId: trip._id }, { $pull: { splitWith: req.params.userId } });
+        await Misc.updateMany({ tripId: trip._id }, { $pull: { splitWith: req.params.userId } });
         await Stay.updateMany({ tripId: trip._id }, { $pull: { splitWith: req.params.userId } });
         await Transport.updateMany({ tripId: trip._id }, { $pull: { splitWith: req.params.userId } });
         await Attraction.updateMany({ tripId: trip._id }, { $pull: { splitWith: req.params.userId } });
@@ -421,6 +434,31 @@ exports.removeGuest = async (req, res) => {
 
         await trip.populate('members.user', 'username name avatar')
         res.json(trip)
+    } catch (err) {
+        res.status(500).json({ message: 'Server error', error: err.message })
+    }
+}
+
+exports.getMiscByDate = async (req, res) => {
+    try {
+        const trip = await Trip.findById(req.params.id)
+        if (!trip) return res.status(404).json({ message: 'Trip not found' })
+
+        const isMember = trip.members.some(m => m.user.toString() === req.user._id.toString())
+        if (!isMember) return res.status(403).json({ message: 'Not authorized' })
+
+        const Misc = require('../models/Misc')
+        const miscs = await Misc.find({ tripId: req.params.id, date: { $exists: true, $ne: null } })
+            .sort({ date: 1 })
+
+        const byDate = {}
+        miscs.forEach(m => {
+            const dateStr = new Date(m.date).toISOString().split('T')[0]
+            if (!byDate[dateStr]) byDate[dateStr] = 0
+            byDate[dateStr] += m.cost || 0
+        })
+
+        res.json(byDate)
     } catch (err) {
         res.status(500).json({ message: 'Server error', error: err.message })
     }
