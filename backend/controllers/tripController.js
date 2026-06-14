@@ -399,7 +399,7 @@ exports.addGuest = async (req, res) => {
         const { name } = req.body
         if (!name) return res.status(400).json({ message: 'Name is required' })
 
-        const color = Trip.getRandomUniqueColor([...trip.members, ...trip.guests])
+        const color = 'grey'
         trip.guests.push({ name, color, addedBy: req.user._id })
         await trip.save()
         await trip.populate('members.user', 'username name avatar')
