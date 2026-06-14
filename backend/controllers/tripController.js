@@ -291,7 +291,7 @@ exports.getExpenses = async (req, res) => {
         const [stays, transports, attractions, miscs] = await Promise.all([
             Stay.find({ tripId: req.params.id, isSelected: true }),
             Transport.find({ tripId: req.params.id, isConfirmed: true }),
-            Attraction.find({ tripId: req.params.id }),
+            Attraction.find({ tripId: req.params.id, visited: true }),
             Misc.find({ tripId: req.params.id })
         ])
 
