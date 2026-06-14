@@ -239,7 +239,7 @@ const AttractionsPage = () => {
     return (
         <div className="section-page">
             <header className="trip-header">
-                <button className="btn-back" onClick={() => navigate(`/trips/${id}`)}>← Back</button>
+                <button className="btn-back" style={{ height: "-webkit-fill-available" }} onClick={() => navigate(`/trips/${id}/${cityId}`)}>Back</button>
                 <div className="trip-header-info">
                     <h1>Attractions</h1>
                     <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
