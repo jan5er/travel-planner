@@ -33,18 +33,23 @@ const SortableCityTab = ({ city, activeCity, onClick }) => {
     return (
         <button
             ref={setNodeRef}
-            style={activeCity === city._id ? {
-                borderColor: city.color,
-                color: city.color,
-                borderBottom: 'none',
-                marginBottom: '-1px',
-                paddingBottom: 'calc(10px + 1px)',
-                zIndex: 1,
-                position: 'relative',
-                backgroundColor: 'var(--bg-primary)',
-                borderWidth: '2px'
-                
-            } : {}}
+            style={{
+                ...style,
+                ...(activeCity === city._id
+                    ? {
+                        borderColor: city.color,
+                        color: city.color,
+                        borderBottom: 'none',
+                        marginBottom: '-3px',
+                        paddingBottom: 'calc(10px + 1px)',
+                        zIndex: 1,
+                        position: 'relative',
+                        backgroundColor: 'var(--bg-primary)',
+                        borderWidth: '2px',
+                        borderBottomColor: 'transparent',
+                    }
+                    : {})
+            }}
             className={`city-tab ${activeCity === city._id ? 'active' : ''}`}
             onClick={onClick}
             {...attributes}

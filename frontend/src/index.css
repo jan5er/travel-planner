@@ -657,6 +657,7 @@ input[type="date"] {
 
 .city-tab.active {
     background: var(--bg-card);
+    border-bottom-color: transparent;
     border-color: inherit;
     border-bottom-color: transparent;
     font-weight: 600;
@@ -715,6 +716,9 @@ input[type="date"] {
     border-top: none;
     margin-top: -1px;
     position: relative;
+    margin-left: 1%;
+    margin-right: 1%;
+    border-radius: var(--radius) var(--radius) var(--radius-sm) var(--radius-sm);
 }
 
 .city-content-header {
