@@ -652,6 +652,7 @@ input[type="date"] {
     width: 100%;
     transition: background-color 0.3s ease;
     margin-top: -1px;
+    background: var(--border);
 }
 
 .city-tab.active {
@@ -681,6 +682,11 @@ input[type="date"] {
     flex-shrink: 0;
 }
 
+.trip-total-section {
+    margin-bottom: 16px;
+    padding: 20px 40px;
+}
+
 .city-tab:hover {
     color: var(--text-primary);
     background: var(--bg-card);
@@ -706,6 +712,9 @@ input[type="date"] {
 /* CITY CONTENT */
 .city-content {
     padding: 32px 40px;
+    border-top: none;
+    margin-top: -1px;
+    position: relative;
 }
 
 .city-content-header {
@@ -2512,6 +2521,19 @@ textarea:focus {
     border-radius: var(--radius-sm);
     overflow: hidden;
 }
+
+.barchart-toggle {
+    display: flex;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    flex-shrink: 0;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
 
 .chart-toggle-btn {
     background: transparent;

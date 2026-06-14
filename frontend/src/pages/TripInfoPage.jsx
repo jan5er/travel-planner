@@ -11,9 +11,9 @@ import {
 
 const CATEGORY_COLORS = {
     stays: '#4f8ef7',
-    transport: '#f7774f',
+    transport: '#f74f7a',
     attractions: '#4fcc8e',
-    misc: '#f7d14f'
+    misc: '#f7b84f'
 }
 
 const CATEGORY_LABELS = {
@@ -54,6 +54,7 @@ const TripInfoPage = () => {
     const [activeCategory, setActiveCategory] = useState(null)
     const [pieView, setPieView] = useState('total')
     const [barView, setBarView] = useState('stacked')
+    const [selectedPerson, setSelectedPerson] = useState(null)
 
     useEffect(() => {
         const fetchData = async () => {
@@ -134,13 +135,24 @@ const TripInfoPage = () => {
         }
     }).filter(d => d.value > 0) : []
 
-    const barData = expenses ? Object.entries(expenses.perCity).map(([cityId, cityExp]) => ({
-        name: cityExp.name,
-        Stays: cityExp.stays || 0,
-        Transport: cityExp.transport || 0,
-        Attractions: cityExp.attractions || 0,
-        Misc: cityExp.misc || 0,
-    })) : []
+    const barData = expenses ? Object.entries(expenses.perCity).map(([cityId, cityExp]) => {
+        if (selectedPerson) {
+            return {
+                name: cityExp.name,
+                Stays: cityExp.perPersonByCategory?.stays?.[selectedPerson] || 0,
+                Transport: cityExp.perPersonByCategory?.transport?.[selectedPerson] || 0,
+                Attractions: cityExp.perPersonByCategory?.attractions?.[selectedPerson] || 0,
+                Misc: cityExp.perPersonByCategory?.misc?.[selectedPerson] || 0,
+            }
+        }
+        return {
+            name: cityExp.name,
+            Stays: cityExp.stays || 0,
+            Transport: cityExp.transport || 0,
+            Attractions: cityExp.attractions || 0,
+            Misc: cityExp.misc || 0,
+        }
+    }) : []
 
     const lineData = miscByDate ? Object.entries(miscByDate).map(([date, amount]) => ({
         date: new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
@@ -312,9 +324,22 @@ const TripInfoPage = () => {
                             <div className="chart-card" style={{ marginTop: 16 }}>
                                 <div className="chart-card-header">
                                     <h3 className="chart-title">By City</h3>
-                                    <div className="chart-toggle">
-                                        <button className={`chart-toggle-btn ${barView === 'stacked' ? 'active' : ''}`} onClick={() => setBarView('stacked')}>Stacked</button>
-                                        <button className={`chart-toggle-btn ${barView === 'grouped' ? 'active' : ''}`} onClick={() => setBarView('grouped')}>Grouped</button>
+                                    <div className="barchart-toggle">
+                                            <button className={`chart-toggle-btn ${barView === 'stacked' ? 'active' : ''}`} onClick={() => setBarView('stacked')}>Stacked</button>
+                                            <button className={`chart-toggle-btn ${barView === 'grouped' ? 'active' : ''}`} onClick={() => setBarView('grouped')}>Grouped</button>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                        <select
+                                            className="select-input"
+                                            style={{ padding: '4px 10px', fontSize: '0.78rem' }}
+                                            value={selectedPerson || ''}
+                                            onChange={e => setSelectedPerson(e.target.value || null)}
+                                        >
+                                            <option value="">Everyone</option>
+                                            {[...(expenses.members || []), ...(expenses.guests || [])].map(p => (
+                                                <option key={p._id} value={p._id}>{p.name}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                 </div>
                                 <ResponsiveContainer width="100%" height={240}>
