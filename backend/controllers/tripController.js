@@ -2,7 +2,10 @@ const { Trip, MEMBER_COLORS } = require('../models/Trip.js');
 const User = require('../models/User')
 const crypto = require('crypto')
 const mongoose = require('mongoose')
-const Misc = require('../models/Misc')
+const Attraction = require('../models/Attraction');
+const Stay = require('../models/Stay');
+const Transport = require('../models/Transport');
+const Misc = require('../models/Misc');
 
 exports.createTrip = async (req, res) => {
     // console.log('req.user:', req.user)
@@ -123,12 +126,18 @@ exports.removeMember = async (req, res) => {
         const isMember = trip.members.some(m => m.user.toString() === req.user._id);
         if (!isMember) return res.status(403).json({ message: 'Not authorized' });
 
-        if (req.params.memberId === trip.createdBy.toString()) {
-            return res.status(400).json({ message: 'Cannot remove the trip creator' });
-        }
+        const memberIndex = trip.members.findIndex(m => m.user.toString() === req.params.userId);
+        if (memberIndex === -1) return res.status(404).json({ message: 'Member not found' });
 
-        trip.members = trip.members.filter(m => m.user.toString() !== req.params.memberId);
+        trip.members.splice(memberIndex, 1);
         await trip.save();
+
+        await Misc.updateMany({ tripId: trip._id }, { $pull: { splitWith: req.params.userId } });
+        await Stay.updateMany({ tripId: trip._id }, { $pull: { splitWith: req.params.userId } });
+        await Transport.updateMany({ tripId: trip._id }, { $pull: { splitWith: req.params.userId } });
+        await Attraction.updateMany({ tripId: trip._id }, { $pull: { splitWith: req.params.userId } });
+
+        await trip.populate('members.user', 'username name avatar');
         res.json(trip);
     } catch (err) {
         console.error('Error removing member:', err);

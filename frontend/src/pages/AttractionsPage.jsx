@@ -265,7 +265,7 @@ const AttractionsPage = () => {
                         )}
                         {visited.length > 0 && (
                             <div className="stays-group">
-                                <h2 className="stays-group-label">✓ Visited</h2>
+                                <h2 className="stays-group-label">Booked / Visited</h2>
                                 {visited.map(renderAttractionCard)}
                             </div>
                         )}
