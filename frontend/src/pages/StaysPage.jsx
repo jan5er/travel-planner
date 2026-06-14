@@ -210,6 +210,8 @@ const StaysPage = () => {
                                         tripMember?.user?.avatar ||
                                         guest?.avatar
 
+                                    const color = getMemberColor(id)
+
                                     return (
                                         <div
                                             key={id}
