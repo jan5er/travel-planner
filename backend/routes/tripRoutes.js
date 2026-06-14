@@ -24,5 +24,4 @@ router.delete('/:id/notes/:noteId', deleteNote)
 router.patch('/:id/notes/:noteId', updateNote)
 
 router.get('/:id/expenses', getExpenses)
-
 module.exports = router

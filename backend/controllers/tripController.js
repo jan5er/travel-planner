@@ -2,6 +2,7 @@ const { Trip, MEMBER_COLORS } = require('../models/Trip.js');
 const User = require('../models/User')
 const crypto = require('crypto')
 const mongoose = require('mongoose')
+const Misc = require('../models/Misc')
 
 exports.createTrip = async (req, res) => {
     // console.log('req.user:', req.user)
@@ -278,10 +279,11 @@ exports.getExpenses = async (req, res) => {
 
         const cities = await require('../models/City').find({ tripId: req.params.id })
 
-        const [stays, transports, attractions] = await Promise.all([
+        const [stays, transports, attractions, miscs] = await Promise.all([
             Stay.find({ tripId: req.params.id, isSelected: true }),
             Transport.find({ tripId: req.params.id, isConfirmed: true }),
-            Attraction.find({ tripId: req.params.id })
+            Attraction.find({ tripId: req.params.id }),
+            Misc.find({ tripId: req.params.id })
         ])
 
         const perCity = {}
@@ -341,9 +343,15 @@ exports.getExpenses = async (req, res) => {
             addExpense(a.cityId, 'attractions', cost, a.splitWith)
         })
 
+        miscs.forEach(m => {
+            const cost = m.cost || 0
+            addExpense(m.cityId, 'misc', cost, m.splitWith)
+        })
+
         const total = {
             stays: 0, transport: 0, attractions: 0, misc: 0, grand: 0
         }
+        
         Object.values(perCity).forEach(c => {
             total.stays += c.stays
             total.transport += c.transport

@@ -2274,7 +2274,51 @@ textarea:focus {
     color: var(--accent);
 }
 
+/* MISC SUMMARY */
+.misc-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 8px;
+}
 
+.misc-summary-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.misc-summary-label {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+.misc-summary-amount {
+    font-size: 1.3rem;
+    font-weight: 700;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+/* GROUP TOTAL */
+.stays-group-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.group-total {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    font-weight: 400;
+}
 
 
 
