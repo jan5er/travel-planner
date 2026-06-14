@@ -35,7 +35,21 @@ const SortableCityTab = ({ city, activeCity, onClick }) => {
             ref={setNodeRef}
             style={{
                 ...style,
-                ...(activeCity === city._id ? { borderColor: city.color, color: city.color } : {})
+                ...(activeCity === city._id
+                    ? {
+                        '--city-color': city.color,
+                        borderColor: city.color,
+                        color: city.color,
+                        borderBottom: 'none',
+                        marginBottom: '-25px',
+                        paddingBottom: 'calc(10px + 1px)',
+                        zIndex: 1,
+                        position: 'relative',
+                        backgroundColor: 'var(--bg-primary)',
+                        borderWidth: '2px',
+                        borderBottomColor: 'transparent',
+                    }
+                    : {})
             }}
             className={`city-tab ${activeCity === city._id ? 'active' : ''}`}
             onClick={onClick}
@@ -312,7 +326,6 @@ const TripPage = () => {
                 </DndContext>
                 <div
                     className="city-active-bar"
-                    style={{ backgroundColor: activeCityData?.color || 'transparent' }}
                 />
             </div>
 
@@ -325,7 +338,11 @@ const TripPage = () => {
                     </button>
                 </div>
             ) : activeCityData ? (
-                <div className="city-content">
+                <div className="city-content" style={{ 
+                        background: `linear-gradient(165deg, ${activeCityData.color}12 0%, transparent 90%)`,
+                        border: `2px solid ${activeCityData.color}`,
+                        marginTop: -2
+                }}>
                     <div className="city-content-header">
                         <div className="city-color-bar" style={{ backgroundColor: activeCityData.color }} />
                         <div>
@@ -432,56 +449,58 @@ const TripPage = () => {
                             </div>
                         </div>
                     )}
-
-                    {/* TRIP TOTAL */}
-                    {expenses && (
-                        <div className="city-expenses trip-total">
-                            <h3 className="expenses-label">Trip Total</h3>
-                            <div className="expenses-table">
-                                <div className="expenses-table-header">
-                                    <span></span>
-                                    <span>Total</span>
-                                    <span>Your Share</span>
-                                </div>
-                                {[
-                                    { key: 'stays', icon: '🏨', label: 'Stays' },
-                                    { key: 'transport', icon: '✈️', label: 'Transport' },
-                                    { key: 'attractions', icon: '🗺️', label: 'Attractions' },
-                                    { key: 'misc', icon: '🍜', label: 'Misc' },
-                                ].map(({ key, icon, label }) => {
-                                    const total = expenses.total[key] || 0
-                                    const myShare = Object.values(expenses.perCity).reduce((sum, city) => {
-                                        const cityShareForCategory = city.perPersonByCategory?.[key]?.[user?._id] || 0
-                                        return sum + cityShareForCategory
-                                    }, 0)
-                                    return (
-                                        <div key={key} className="expenses-table-row">
-                                            <span className="expenses-row-label">
-                                                <span className="expense-icon">{icon}</span>
-                                                {label}
-                                            </span>
-                                            <span className="expense-amount">€{total.toFixed(2)}</span>
-                                            <span className="expense-amount your-share-amount">
-                                                {total > 0 ? `€${myShare.toFixed(2)}` : '—'}
-                                            </span>
-                                        </div>
-                                    )
-                                })}
-                                <div className="expenses-table-row total">
-                                    <span className="expenses-row-label">
-                                    Grand Total
-                                    </span>
-                                    <span className="expense-amount">€{(expenses.total.grand || 0).toFixed(2)}</span>
-                                    <span className="expense-amount your-share-amount">
-                                        €{Object.values(expenses.perCity).reduce((sum, city) =>
-                                            sum + (city.perPerson?.[user?._id] || 0), 0).toFixed(2)}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    )}
                 </div>
             ) : null}
+
+            {/* TRIP TOTAL */}
+            <div className="trip-total-section">
+            {expenses && (
+                <div className="city-expenses trip-total">
+                    <h3 className="expenses-label">Trip Total</h3>
+                    <div className="expenses-table">
+                        <div className="expenses-table-header">
+                            <span></span>
+                            <span>Total</span>
+                            <span>Your Share</span>
+                        </div>
+                        {[
+                            { key: 'stays', icon: '🏨', label: 'Stays' },
+                            { key: 'transport', icon: '✈️', label: 'Transport' },
+                            { key: 'attractions', icon: '🗺️', label: 'Attractions' },
+                            { key: 'misc', icon: '🍜', label: 'Misc' },
+                        ].map(({ key, icon, label }) => {
+                            const total = expenses.total[key] || 0
+                            const myShare = Object.values(expenses.perCity).reduce((sum, city) => {
+                                const cityShareForCategory = city.perPersonByCategory?.[key]?.[user?._id] || 0
+                                return sum + cityShareForCategory
+                            }, 0)
+                            return (
+                                <div key={key} className="expenses-table-row">
+                                    <span className="expenses-row-label">
+                                        <span className="expense-icon">{icon}</span>
+                                        {label}
+                                    </span>
+                                    <span className="expense-amount">€{total.toFixed(2)}</span>
+                                    <span className="expense-amount your-share-amount">
+                                        {total > 0 ? `€${myShare.toFixed(2)}` : '—'}
+                                    </span>
+                                </div>
+                            )
+                        })}
+                        <div className="expenses-table-row total">
+                            <span className="expenses-row-label">
+                            Grand Total
+                            </span>
+                            <span className="expense-amount">€{(expenses.total.grand || 0).toFixed(2)}</span>
+                            <span className="expense-amount your-share-amount">
+                                €{Object.values(expenses.perCity).reduce((sum, city) =>
+                                    sum + (city.perPerson?.[user?._id] || 0), 0).toFixed(2)}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            )}
+            </div>
 
             {/* MODALS */}
             {showAddCity && (

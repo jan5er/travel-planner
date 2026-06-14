@@ -652,10 +652,31 @@ input[type="date"] {
     width: 100%;
     transition: background-color 0.3s ease;
     margin-top: -1px;
+    background: var(--border);
 }
 
 .city-tab.active {
-    background: var(--bg-card);
+    background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--city-color) 20%, transparent) 10%,
+        transparent 100%
+    );
+    border-bottom-color: transparent;
+    border-color: inherit;
+    border-bottom-color: transparent;
+    font-weight: 600;
+    position: relative;
+    z-index: 1;
+}
+
+.city-tab.active:hover {
+    background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--city-color) 20%, transparent) 10%,
+        transparent 100%
+    );
+    transition: background 0.3s ease;
+    border-bottom-color: transparent;
     border-color: inherit;
     border-bottom-color: transparent;
     font-weight: 600;
@@ -679,6 +700,11 @@ input[type="date"] {
     align-items: center;
     gap: 2px;
     flex-shrink: 0;
+}
+
+.trip-total-section {
+    margin-bottom: 16px;
+    padding: 20px 40px;
 }
 
 .city-tab:hover {
@@ -706,6 +732,12 @@ input[type="date"] {
 /* CITY CONTENT */
 .city-content {
     padding: 32px 40px;
+    border-top: none;
+    margin-top: -1px;
+    position: relative;
+    margin-left: 1%;
+    margin-right: 1%;
+    border-radius: var(--radius) var(--radius) var(--radius) var(--radius);
 }
 
 .city-content-header {
@@ -2512,6 +2544,19 @@ textarea:focus {
     border-radius: var(--radius-sm);
     overflow: hidden;
 }
+
+.barchart-toggle {
+    display: flex;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    flex-shrink: 0;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
 
 .chart-toggle-btn {
     background: transparent;

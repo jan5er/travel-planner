@@ -18,10 +18,7 @@ const AddMiscModal = ({ tripId, cityId, members, tripStartDate, tripEndDate, onC
         description: initialData?.description || '',
         cost: initialData?.cost || '',
         date: initialData?.date ? new Date(initialData.date) : null,
-        splitWith: initialData?.splitWith?.map(u => u._id || u) || [ 
-            ...members.map(m => m.user._id),
-            ...(guests || []).map(g => g._id)
-        ]
+        splitWith: initialData?.splitWith?.map(u => u._id || u) || []
     })
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
