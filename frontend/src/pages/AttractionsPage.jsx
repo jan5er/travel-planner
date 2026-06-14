@@ -324,6 +324,7 @@ const AttractionsPage = () => {
                         }
                         setAttractionToEdit(null)
                     }}
+                    guests={trip.guests || []}
                 />
             )}
 

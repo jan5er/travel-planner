@@ -17,7 +17,7 @@ const attractionSchema = new mongoose.Schema({
     },
 
     suggestedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    splitWith: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    splitWith: [{ type: mongoose.Schema.Types.ObjectId }],
 
     visited: { type: Boolean, default: false },
     votes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],

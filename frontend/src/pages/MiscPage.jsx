@@ -74,7 +74,7 @@ const MiscPage = () => {
     }, 0)
 
     const backCityId = cityId || localStorage.getItem(`trip-active-city-${id}`)
-    
+
     const grouped = miscs.reduce((acc, m) => {
         const key = m.category || 'other'
         if (!acc[key]) acc[key] = []
@@ -238,6 +238,7 @@ const MiscPage = () => {
                         }
                         setMiscToEdit(null)
                     }}
+                    guests={trip.guests || []}
                 />
             )}
 

@@ -365,3 +365,41 @@ exports.getExpenses = async (req, res) => {
         res.status(500).json({ message: 'Server error', error: err.message })
     }
 }
+
+exports.addGuest = async (req, res) => {
+    try {
+        const trip = await Trip.findById(req.params.id)
+        if (!trip) return res.status(404).json({ message: 'Trip not found' })
+
+        const isMember = trip.members.some(m => m.user.toString() === req.user._id.toString())
+        if (!isMember) return res.status(403).json({ message: 'Not authorized' })
+
+        const { name } = req.body
+        if (!name) return res.status(400).json({ message: 'Name is required' })
+
+        const color = Trip.getRandomUniqueColor([...trip.members, ...trip.guests])
+        trip.guests.push({ name, color, addedBy: req.user._id })
+        await trip.save()
+        await trip.populate('members.user', 'username name avatar')
+        res.json(trip)
+    } catch (err) {
+        res.status(500).json({ message: 'Server error', error: err.message })
+    }
+}
+
+exports.removeGuest = async (req, res) => {
+    try {
+        const trip = await Trip.findById(req.params.id)
+        if (!trip) return res.status(404).json({ message: 'Trip not found' })
+
+        const isMember = trip.members.some(m => m.user.toString() === req.user._id.toString())
+        if (!isMember) return res.status(403).json({ message: 'Not authorized' })
+
+        trip.guests.pull({ _id: req.params.guestId })
+        await trip.save()
+        await trip.populate('members.user', 'username name avatar')
+        res.json(trip)
+    } catch (err) {
+        res.status(500).json({ message: 'Server error', error: err.message })
+    }
+}

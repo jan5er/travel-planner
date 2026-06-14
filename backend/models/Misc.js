@@ -12,7 +12,7 @@ const miscSchema = new mongoose.Schema({
     },
     description: { type: String, trim: true },
     cost: { type: Number, default: 0 },
-    splitWith: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    splitWith: [{ type: mongoose.Schema.Types.ObjectId }],
     addedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     date: { type: Date }
 }, { timestamps: true })

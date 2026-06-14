@@ -182,37 +182,29 @@ const StaysPage = () => {
                             </div>
                         )}
                     </div>
-                    {stay.splitWith?.length > 0 && (
-                        <div className="stay-split">
-                            <span className="split-label">Split:</span>
-                            <div className="split-avatars">
-                                {stay.splitWith.map(member => {
-                                    if (!member?._id) return null
-                                    const tripMember = trip.members.find(m => 
-                                        m.user._id === member._id || 
-                                        m.user._id?.toString() === member._id?.toString()
-                                    )
-                                    const color = tripMember?.color || 'var(--accent)'
-                                    return (
-                                        <div
-                                            key={member._id}
-                                            className="member-avatar"
-                                            style={{ border: `2px solid ${color}`, width: 24, height: 24, fontSize: '0.65rem' }}
-                                            title={member.name || member.username}
-                                        >
-                                            {member.avatar && member.avatar !== 'images/default-avatar.png' ? (
-                                                <img src={member.avatar} alt="" />
-                                            ) : (
-                                                <span style={{ backgroundColor: color }}>
-                                                    {member.name?.[0]?.toUpperCase()}
-                                                </span>
-                                            )}
-                                        </div>
-                                    )
-                                })}
+                    {stay.splitWith?.map(uid => {
+                        const uidStr = (uid._id || uid)?.toString()
+                        const tripMember = trip.members.find(m => m.user._id?.toString() === uidStr)
+                        const guest = trip.guests?.find(g => g._id?.toString() === uidStr)
+                        const color = tripMember?.color || guest?.color || 'var(--accent)'
+                        const name = tripMember?.user?.name || tripMember?.user?.username || guest?.name || '?'
+                        const avatar = tripMember?.user?.avatar
+
+                        return (
+                            <div
+                                key={uidStr}
+                                className="member-avatar"
+                                style={{ border: `2px solid ${color}`, width: 24, height: 24, fontSize: '0.65rem' }}
+                                title={name}
+                            >
+                                {avatar && avatar !== 'images/default-avatar.png' ? (
+                                    <img src={avatar} alt="" />
+                                ) : (
+                                    <span style={{ backgroundColor: color }}>{name?.[0]?.toUpperCase()}</span>
+                                )}
                             </div>
-                        </div>
-                    )}
+                        )
+                    })}
                     
                     <div className="stay-notes-section">
                         <button 
@@ -379,6 +371,7 @@ const StaysPage = () => {
                         }
                         setStayToEdit(null)
                     }}
+                    guests={trip.guests || []}
                 />
             )}
 

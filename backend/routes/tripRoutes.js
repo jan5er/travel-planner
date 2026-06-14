@@ -3,7 +3,8 @@ const router = express.Router()
 const auth = require('../middleware/auth')
 const {
     createTrip, getTrips, getTrip, updateTrip, deleteTrip, addMember, removeMember, 
-    generateInvite, joinByInvite, updateMemberColor, addNote, deleteNote, updateNote, getExpenses
+    generateInvite, joinByInvite, updateMemberColor, addNote, deleteNote, updateNote, getExpenses,
+    addGuest, removeGuest
 } = require('../controllers/tripController')
 
 router.use(auth); // Dejansko moramo biti za vse te route prijavljeni tako da lahko dodamo samo en auth middleware na vrh v use
@@ -24,4 +25,8 @@ router.delete('/:id/notes/:noteId', deleteNote)
 router.patch('/:id/notes/:noteId', updateNote)
 
 router.get('/:id/expenses', getExpenses)
+
+router.post('/:id/guests', addGuest)
+router.delete('/:id/guests/:guestId', removeGuest)
+
 module.exports = router
