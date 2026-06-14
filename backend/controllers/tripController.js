@@ -406,6 +406,19 @@ exports.removeGuest = async (req, res) => {
 
         trip.guests.pull({ _id: req.params.guestId })
         await trip.save()
+
+        /*
+                await Misc.updateMany({ tripId: trip._id }, { $pull: { splitWith: req.params.userId } });
+        await Stay.updateMany({ tripId: trip._id }, { $pull: { splitWith: req.params.userId } });
+        await Transport.updateMany({ tripId: trip._id }, { $pull: { splitWith: req.params.userId } });
+        await Attraction.updateMany({ tripId: trip._id }, { $pull: { splitWith: req.params.userId } });
+        */
+
+        await Misc.updateMany({ tripId: trip._id }, { $pull: { splitWith: req.params.guestId } });
+        await Stay.updateMany({ tripId: trip._id }, { $pull: { splitWith: req.params.guestId } });
+        await Transport.updateMany({ tripId: trip._id }, { $pull: { splitWith: req.params.guestId } });
+        await Attraction.updateMany({ tripId: trip._id }, { $pull: { splitWith: req.params.guestId } });
+
         await trip.populate('members.user', 'username name avatar')
         res.json(trip)
     } catch (err) {

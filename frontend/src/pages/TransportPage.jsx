@@ -279,29 +279,52 @@ const TransportPage = () => {
                         )}
                     </div>
 
-                    {transport.splitWith?.map(uid => {
-                        const uidStr = (uid._id || uid)?.toString()
-                        const tripMember = trip.members.find(m => m.user._id?.toString() === uidStr)
-                        const guest = trip.guests?.find(g => g._id?.toString() === uidStr)
-                        const color = tripMember?.color || guest?.color || 'var(--accent)'
-                        const name = tripMember?.user?.name || tripMember?.user?.username || guest?.name || '?'
-                        const avatar = tripMember?.user?.avatar
+                    {transport.splitWith?.length > 0 && (
+                        <div className="stay-split">
+                            <span className="split-label">Split Between:</span>
 
-                        return (
-                            <div
-                                key={uidStr}
-                                className="member-avatar"
-                                style={{ border: `2px solid ${color}`, width: 24, height: 24, fontSize: '0.65rem' }}
-                                title={name}
-                            >
-                                {avatar && avatar !== 'images/default-avatar.png' ? (
-                                    <img src={avatar} alt="" />
-                                ) : (
-                                    <span style={{ backgroundColor: color }}>{name?.[0]?.toUpperCase()}</span>
-                                )}
+                            <div className="split-avatars">
+                                {transport.splitWith.map(person => {
+                                    console.log("person", person)
+
+                                    const id = (person._id || person)?.toString()
+
+                                    const tripMember = trip.members.find(
+                                        m => (m.user?._id || m.user)?.toString() === id
+                                    )
+
+                                    const guest = trip.guests?.find(
+                                        g => g._id?.toString() === id
+                                    )
+
+                                    const name = tripMember?.user?.name || tripMember?.user?.username || guest?.name || '?'
+                                    const avatar = tripMember?.user?.avatar || guest?.avatar
+                                    const color = tripMember ? tripMember.color : guest ? 'gray' : 'var(--accent)'
+
+                                    return (
+                                        <div
+                                            key={id}
+                                            className="member-avatar"
+                                            style={{
+                                                border: `2px solid ${color}`,
+                                                width: 24,
+                                                height: 24,
+                                                fontSize: '0.65rem'
+                                            }}
+                                            title={name}>
+                                            {avatar && avatar !== 'images/default-avatar.png' ? (
+                                                <img src={avatar} alt="" />
+                                            ) : (
+                                                <span style={{ backgroundColor: color }}>
+                                                    {name?.[0]?.toUpperCase()}
+                                                </span>
+                                            )}
+                                        </div>
+                                    )
+                                })}
                             </div>
-                        )
-                    })}
+                        </div>
+                    )}
 
                     {transport.note && <p className="stay-notes">{transport.note}</p>}
                 </div>

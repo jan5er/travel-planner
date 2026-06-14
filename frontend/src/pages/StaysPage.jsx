@@ -200,17 +200,9 @@ const StaysPage = () => {
                                         g => g._id?.toString() === id
                                     )
 
-                                    const name =
-                                        tripMember?.user?.name ||
-                                        tripMember?.user?.username ||
-                                        guest?.name ||
-                                        '?'
-
-                                    const avatar =
-                                        tripMember?.user?.avatar ||
-                                        guest?.avatar
-
-                                    const color = getMemberColor(id)
+                                    const name = tripMember?.user?.name || tripMember?.user?.username || guest?.name || '?'
+                                    const avatar = tripMember?.user?.avatar || guest?.avatar
+                                    const color = tripMember ? tripMember.color : guest ? 'gray' : 'var(--accent)'
 
                                     return (
                                         <div
@@ -222,8 +214,7 @@ const StaysPage = () => {
                                                 height: 24,
                                                 fontSize: '0.65rem'
                                             }}
-                                            title={name}
-                                        >
+                                            title={name}>
                                             {avatar && avatar !== 'images/default-avatar.png' ? (
                                                 <img src={avatar} alt="" />
                                             ) : (
