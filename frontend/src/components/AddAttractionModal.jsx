@@ -32,7 +32,7 @@ const MapClickHandler = ({ onMapClick }) => {
     return null
 }
 
-const AddAttractionModal = ({ tripId, cityId, city, members, onClose, onAdded, initialData }) => {
+const AddAttractionModal = ({ tripId, cityId, city, members, onClose, onAdded, initialData, guests }) => {
     const [form, setForm] = useState({
         name: initialData?.name || '',
         description: initialData?.description || '',
@@ -41,7 +41,10 @@ const AddAttractionModal = ({ tripId, cityId, city, members, onClose, onAdded, i
         link: initialData?.link || '',
         address: initialData?.address || '',
         coordinates: initialData?.coordinates || null,
-        splitWith: initialData?.splitWith?.map(u => u._id || u) || members.map(m => m.user._id)
+        splitWith: initialData?.splitWith?.map(u => u._id || u) || [ 
+            ...members.map(m => m.user._id),
+            ...(guests || []).map(g => g._id)
+        ]
     })
     const [addressQuery, setAddressQuery] = useState(initialData?.address || '')
     const [suggestions, setSuggestions] = useState([])
@@ -55,6 +58,23 @@ const AddAttractionModal = ({ tripId, cityId, city, members, onClose, onAdded, i
         : city?.coordinates
             ? [city.coordinates.lat, city.coordinates.lng]
             : [48, 16]
+
+    const allPeople = [
+        ...members.map(m => ({
+            _id: m.user._id,
+            name: m.user.name || m.user.username,
+            avatar: m.user.avatar,
+            color: m.color,
+            isGuest: false
+        })),
+        ...(guests || []).map(g => ({
+            _id: g._id,
+            name: g.name,
+            avatar: null,
+            color: g.color,
+            isGuest: true
+        }))
+    ]
 
     useEffect(() => {
         if (addressQuery.length < 2) { setSuggestions([]); return }
@@ -279,28 +299,29 @@ const AddAttractionModal = ({ tripId, cityId, city, members, onClose, onAdded, i
                     <div className="form-group">
                         <label>Split With</label>
                         <div className="split-members">
-                            {members.map(m => (
+                            {allPeople.map(person => (
                                 <div
-                                    key={m.user._id}
-                                    className={`split-member ${form.splitWith.includes(m.user._id) ? 'selected' : ''}`}
-                                    style={form.splitWith.includes(m.user._id) ? {
-                                        borderColor: m.color,
-                                        background: `${m.color}15`
+                                    key={person._id}
+                                    className={`split-member ${form.splitWith.includes(person._id) ? 'selected' : ''}`}
+                                    style={form.splitWith.includes(person._id) ? {
+                                        borderColor: person.color,
+                                        background: `${person.color}15`
                                     } : {}}
-                                    onClick={() => toggleSplit(m.user._id)}
+                                    onClick={() => toggleSplit(person._id)}
                                 >
                                     <div
                                         className="member-avatar"
-                                        style={{ border: `2px solid ${m.color}`, width: 28, height: 28, fontSize: '0.7rem' }}
+                                        style={{ border: `2px solid ${person.color}`, width: 28, height: 28, fontSize: '0.7rem' }}
                                     >
-                                        {m.user.avatar && m.user.avatar !== 'images/default-avatar.png' ? (
-                                            <img src={m.user.avatar} alt={m.user.username} />
+                                        {person.avatar && person.avatar !== 'images/default-avatar.png' ? (
+                                            <img src={person.avatar} alt={person.name} />
                                         ) : (
-                                            <span style={{ backgroundColor: m.color }}>{m.user.name?.[0]?.toUpperCase()}</span>
+                                            <span style={{ backgroundColor: person.color }}>{person.name?.[0]?.toUpperCase()}</span>
                                         )}
                                     </div>
-                                    <span>{m.user.name || m.user.username}</span>
-                                    {form.splitWith.includes(m.user._id) && <span className="split-check">✓</span>}
+                                    <span>{person.name}</span>
+                                    {person.isGuest && <span className="you-badge" style={{ background: 'rgba(247,215,79,0.15)', color: '#f7d14f', borderColor: 'rgba(247,215,79,0.3)' }}>guest</span>}
+                                    {form.splitWith.includes(person._id) && <span className="split-check">✓</span>}
                                 </div>
                             ))}
                         </div>

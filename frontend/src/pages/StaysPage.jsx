@@ -184,27 +184,51 @@ const StaysPage = () => {
                     </div>
                     {stay.splitWith?.length > 0 && (
                         <div className="stay-split">
-                            <span className="split-label">Split:</span>
+                            <span className="split-label">Split Between:</span>
+
                             <div className="split-avatars">
-                                {stay.splitWith.map(member => {
-                                    if (!member?._id) return null
-                                    const tripMember = trip.members.find(m => 
-                                        m.user._id === member._id || 
-                                        m.user._id?.toString() === member._id?.toString()
+                                {stay.splitWith.map(person => {
+                                    console.log("person", person)
+
+                                    const id = (person._id || person)?.toString()
+
+                                    const tripMember = trip.members.find(
+                                        m => (m.user?._id || m.user)?.toString() === id
                                     )
-                                    const color = tripMember?.color || 'var(--accent)'
+
+                                    const guest = trip.guests?.find(
+                                        g => g._id?.toString() === id
+                                    )
+
+                                    const name =
+                                        tripMember?.user?.name ||
+                                        tripMember?.user?.username ||
+                                        guest?.name ||
+                                        '?'
+
+                                    const avatar =
+                                        tripMember?.user?.avatar ||
+                                        guest?.avatar
+
+                                    const color = getMemberColor(id)
+
                                     return (
                                         <div
-                                            key={member._id}
+                                            key={id}
                                             className="member-avatar"
-                                            style={{ border: `2px solid ${color}`, width: 24, height: 24, fontSize: '0.65rem' }}
-                                            title={member.name || member.username}
+                                            style={{
+                                                border: `2px solid ${color}`,
+                                                width: 24,
+                                                height: 24,
+                                                fontSize: '0.65rem'
+                                            }}
+                                            title={name}
                                         >
-                                            {member.avatar && member.avatar !== 'images/default-avatar.png' ? (
-                                                <img src={member.avatar} alt="" />
+                                            {avatar && avatar !== 'images/default-avatar.png' ? (
+                                                <img src={avatar} alt="" />
                                             ) : (
                                                 <span style={{ backgroundColor: color }}>
-                                                    {member.name?.[0]?.toUpperCase()}
+                                                    {name?.[0]?.toUpperCase()}
                                                 </span>
                                             )}
                                         </div>
@@ -213,7 +237,6 @@ const StaysPage = () => {
                             </div>
                         </div>
                     )}
-                    
                     <div className="stay-notes-section">
                         <button 
                             className="notes-toggle"
@@ -379,6 +402,7 @@ const StaysPage = () => {
                         }
                         setStayToEdit(null)
                     }}
+                    guests={trip.guests || []}
                 />
             )}
 

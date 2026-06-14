@@ -36,6 +36,8 @@ const TripInfoPage = () => {
     const [showLeaveTrip, setShowLeaveTrip] = useState(false)
     const [deleting, setDeleting] = useState(false)
     const [deleteError, setDeleteError] = useState(null)
+    const [guestInput, setGuestInput] = useState('')
+    const [addingGuest, setAddingGuest] = useState(false)
 
     useEffect(() => {
         const fetchTrip = async () => {
@@ -107,6 +109,29 @@ const TripInfoPage = () => {
             setTrip(res.data)
         } catch (err) {
             console.error('Error updating color:', err)
+        }
+    }
+
+    const handleAddGuest = async (e) => {
+        e.preventDefault()
+        setAddingGuest(true)
+        try {
+            const res = await api.post(`/trips/${id}/guests`, { name: guestInput })
+            setTrip(res.data)
+            setGuestInput('')
+        } catch (err) {
+            console.error('Error adding guest:', err)
+        } finally {
+            setAddingGuest(false)
+        }
+    }
+
+    const handleRemoveGuest = async (guestId) => {
+        try {
+            const res = await api.delete(`/trips/${id}/guests/${guestId}`)
+            setTrip(res.data)
+        } catch (err) {
+            console.error('Error removing guest:', err)
         }
     }
 
@@ -214,6 +239,56 @@ const TripInfoPage = () => {
                             </div>
                         )}
                     </div>
+                </section>
+
+                {/* GUESTS */}
+                <section className="info-section">
+                    <h2>Guests</h2>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: 16 }}>
+                        Add people who don't have an account so you can still split expenses with them.
+                    </p>
+                    {trip.guests?.length > 0 && (
+                        <div className="members-list" style={{ marginBottom: 16 }}>
+                            {trip.guests.map(g => (
+                                <div key={g._id} className="member-row">
+                                    <div
+                                        className="member-avatar"
+                                        style={{ border: `2px solid ${g.color}`, boxShadow: `0 0 8px ${g.color}60` }}
+                                    >
+                                        <span style={{ backgroundColor: g.color }}>
+                                            {g.name?.[0]?.toUpperCase()}
+                                        </span>
+                                    </div>
+                                    <div className="member-info">
+                                        <span className="member-name">
+                                            {g.name}
+                                            <span className="you-badge" style={{ background: 'rgba(247,215,79,0.15)', color: '#f7d14f', borderColor: 'rgba(247,215,79,0.3)' }}>guest</span>
+                                        </span>
+                                    </div>
+                                    <button
+                                        className="btn-icon danger"
+                                        onClick={() => handleRemoveGuest(g._id)}
+                                        title="Remove guest"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    <form className="add-member-form" onSubmit={handleAddGuest}>
+                        <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
+                            <input
+                                type="text"
+                                value={guestInput}
+                                onChange={e => setGuestInput(e.target.value)}
+                                placeholder="Guest name (e.g. John)"
+                            />
+                        </div>
+                        <button className="btn-primary" type="submit" disabled={addingGuest || !guestInput}>
+                            {addingGuest ? 'Adding...' : 'Add Guest'}
+                        </button>
+                    </form>
                 </section>
 
                 {/* TRIP DETAILS */}

@@ -18,7 +18,7 @@ const staySchema = new mongoose.Schema({
     checkIn: { type: Date },
     checkOut: { type: Date },
     cost: { type: Number, default: 0 },
-    splitWith: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    splitWith: [{ type: mongoose.Schema.Types.ObjectId }],
     isSelected: { type: Boolean, default: false },
     addedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     quantity: { type: Number, default: 1, min: 1 },

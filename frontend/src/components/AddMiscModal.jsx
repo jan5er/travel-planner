@@ -11,17 +11,37 @@ const CATEGORIES = [
     { value: 'other', label: 'Other', icon: '📌' },
 ]
 
-const AddMiscModal = ({ tripId, cityId, members, tripStartDate, tripEndDate, onClose, onAdded, initialData }) => {
+const AddMiscModal = ({ tripId, cityId, members, tripStartDate, tripEndDate, onClose, onAdded, initialData, guests }) => {
     const [form, setForm] = useState({
         name: initialData?.name || '',
         category: initialData?.category || 'other',
         description: initialData?.description || '',
         cost: initialData?.cost || '',
         date: initialData?.date ? new Date(initialData.date) : null,
-        splitWith: initialData?.splitWith?.map(u => u._id || u) || []
+        splitWith: initialData?.splitWith?.map(u => u._id || u) || [ 
+            ...members.map(m => m.user._id),
+            ...(guests || []).map(g => g._id)
+        ]
     })
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
+
+    const allPeople = [
+        ...members.map(m => ({
+            _id: m.user._id,
+            name: m.user.name || m.user.username,
+            avatar: m.user.avatar,
+            color: m.color,
+            isGuest: false
+        })),
+        ...(guests || []).map(g => ({
+            _id: g._id,
+            name: g.name,
+            avatar: null,
+            color: g.color,
+            isGuest: true
+        }))
+    ]
 
     const toggleSplit = (userId) => {
         setForm(f => ({
@@ -151,28 +171,29 @@ const AddMiscModal = ({ tripId, cityId, members, tripStartDate, tripEndDate, onC
                     <div className="form-group">
                         <label>Split With</label>
                         <div className="split-members">
-                            {members.map(m => (
+                            {allPeople.map(person => (
                                 <div
-                                    key={m.user._id}
-                                    className={`split-member ${form.splitWith.includes(m.user._id) ? 'selected' : ''}`}
-                                    style={form.splitWith.includes(m.user._id) ? {
-                                        borderColor: m.color,
-                                        background: `${m.color}15`
+                                    key={person._id}
+                                    className={`split-member ${form.splitWith.includes(person._id) ? 'selected' : ''}`}
+                                    style={form.splitWith.includes(person._id) ? {
+                                        borderColor: person.color,
+                                        background: `${person.color}15`
                                     } : {}}
-                                    onClick={() => toggleSplit(m.user._id)}
+                                    onClick={() => toggleSplit(person._id)}
                                 >
                                     <div
                                         className="member-avatar"
-                                        style={{ border: `2px solid ${m.color}`, width: 28, height: 28, fontSize: '0.7rem' }}
+                                        style={{ border: `2px solid ${person.color}`, width: 28, height: 28, fontSize: '0.7rem' }}
                                     >
-                                        {m.user.avatar && m.user.avatar !== 'images/default-avatar.png' ? (
-                                            <img src={m.user.avatar} alt={m.user.username} />
+                                        {person.avatar && person.avatar !== 'images/default-avatar.png' ? (
+                                            <img src={person.avatar} alt={person.name} />
                                         ) : (
-                                            <span style={{ backgroundColor: m.color }}>{m.user.name?.[0]?.toUpperCase()}</span>
+                                            <span style={{ backgroundColor: person.color }}>{person.name?.[0]?.toUpperCase()}</span>
                                         )}
                                     </div>
-                                    <span>{m.user.name || m.user.username}</span>
-                                    {form.splitWith.includes(m.user._id) && <span className="split-check">✓</span>}
+                                    <span>{person.name}</span>
+                                    {person.isGuest && <span className="you-badge" style={{ background: 'rgba(247,215,79,0.15)', color: '#f7d14f', borderColor: 'rgba(247,215,79,0.3)' }}>guest</span>}
+                                    {form.splitWith.includes(person._id) && <span className="split-check">✓</span>}
                                 </div>
                             ))}
                         </div>

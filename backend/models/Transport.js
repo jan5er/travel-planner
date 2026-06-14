@@ -24,7 +24,7 @@ const TransportSchema = new mongoose.Schema({
         name: { type: String, required: true } 
     }],
     cost: { type: Number, default: 0 },
-    splitWith: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    splitWith: [{ type: mongoose.Schema.Types.ObjectId }],
     quantity: { type: Number, default: 1, min: 1 },
     addedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     note: { type: String, trim: true },
