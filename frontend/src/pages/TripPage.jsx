@@ -37,10 +37,11 @@ const SortableCityTab = ({ city, activeCity, onClick }) => {
                 ...style,
                 ...(activeCity === city._id
                     ? {
+                        '--city-color': city.color,
                         borderColor: city.color,
                         color: city.color,
                         borderBottom: 'none',
-                        marginBottom: '-3px',
+                        marginBottom: '-25px',
                         paddingBottom: 'calc(10px + 1px)',
                         zIndex: 1,
                         position: 'relative',

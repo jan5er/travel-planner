@@ -656,7 +656,26 @@ input[type="date"] {
 }
 
 .city-tab.active {
-    background: var(--bg-card);
+    background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--city-color) 20%, transparent) 10%,
+        transparent 100%
+    );
+    border-bottom-color: transparent;
+    border-color: inherit;
+    border-bottom-color: transparent;
+    font-weight: 600;
+    position: relative;
+    z-index: 1;
+}
+
+.city-tab.active:hover {
+    background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--city-color) 20%, transparent) 10%,
+        transparent 100%
+    );
+    transition: background 0.3s ease;
     border-bottom-color: transparent;
     border-color: inherit;
     border-bottom-color: transparent;
@@ -718,7 +737,7 @@ input[type="date"] {
     position: relative;
     margin-left: 1%;
     margin-right: 1%;
-    border-radius: var(--radius) var(--radius) var(--radius-sm) var(--radius-sm);
+    border-radius: var(--radius) var(--radius) var(--radius) var(--radius);
 }
 
 .city-content-header {
