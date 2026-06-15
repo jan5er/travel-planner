@@ -11,9 +11,9 @@ import {
 
 const CATEGORY_COLORS = {
     stays: '#4f8ef7',
-    transport: '#f74f7a',
+    transport: '#f5a524',
     attractions: '#4fcc8e',
-    misc: '#f7b84f'
+    misc: '#f74f7a'
 }
 
 const CATEGORY_LABELS = {
