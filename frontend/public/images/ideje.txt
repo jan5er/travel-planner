@@ -1,8 +1,0 @@
-# ScoreboardSocial 
-Aplikacija, ki prikaže rezultate tekem/športov in njihov potek v živo (torej nek box score, pomembni dogodki (gol, koš,...) , itd.). Dodamo neke lastnosti socialnih omrežij in tako omogočimo povezovanje uporabnikov in komentiranje v živo. Mogoče dodamo kak live win probability (ali pa stave v živo)
-
-# Travel planner
-Aplikacija za načrtovanje potovanj vse od odhoda do prihoda in dodeljevanjem budgeta za vse aktivnosti, ki se potem sešteva da dobiš okvirno idejo o približnem končnem strošku celotnega potovanja. Razdelitev na sekcije za boljšo preglednost in dinamična potovanja, ko uporabnik gre v več mest in si lahko vse skupaj razdeli še na mesta (dneve?). Možnost linkanja vseh pomembnih linkov, vstopnic, kart, itd. v aplikacijo da je vse na enem mestu. Deljenje plana z ostalimi za skupinska potovanja
-
-# Rate my professors SLO
-profesorji.net z neko integriteto in resnostjo (če mogoče kak verification sistem?), da študent ve težavnost predmeta pri določenem profesorju, načine ocenjevanja, ipd. iz strani ostalih študentov ter njihovih izkušenj. Bolj v stilu dejanske strani ratemyprofessors.com.
