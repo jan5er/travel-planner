@@ -143,6 +143,11 @@ const AddTransportModal = ({ tripId, cityId, fromCityId, toCityId, cities, membe
     })
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
+    const [perPersonCost, setPerPersonCost] = useState(
+        initialData?.cost && initialData?.splitWith?.length
+            ? (initialData.cost / initialData.splitWith.length).toFixed(2)
+            : ''
+    )
 
     const allPeople = [
         ...members.map(m => ({
@@ -160,6 +165,12 @@ const AddTransportModal = ({ tripId, cityId, fromCityId, toCityId, cities, membe
             isGuest: true
         }))
     ]
+
+    useEffect(() => {
+        if (perPersonCost && form.quantity) {
+            setForm(f => ({ ...f, cost: ((parseFloat(perPersonCost) || 0) * form.quantity).toFixed(2) }))
+        }
+    }, [form.quantity])
 
     const toggleSplit = (userId) => {
         setForm(f => ({
@@ -361,7 +372,7 @@ const AddTransportModal = ({ tripId, cityId, fromCityId, toCityId, cities, membe
                     </div>
 
                     {/* COST + QUANTITY */}
-                    <div className="form-row">
+                    <div className="form-row cost-row">
                         <div className="form-group">
                             <label>Total Cost</label>
                             <input
@@ -369,17 +380,46 @@ const AddTransportModal = ({ tripId, cityId, fromCityId, toCityId, cities, membe
                                 min={0}
                                 step="0.01"
                                 value={form.cost}
-                                onChange={e => setForm(f => ({ ...f, cost: e.target.value }))}
+                                onChange={e => {
+                                    const total = parseFloat(e.target.value) || 0
+                                    setForm(f => ({ ...f, cost: e.target.value }))
+                                    setPerPersonCost(
+                                        form.quantity > 1
+                                            ? (total / form.quantity).toFixed(2)
+                                            : e.target.value
+                                    )
+                                }}
                                 placeholder="0.00"
                             />
                         </div>
                         <div className="form-group">
+                            <label>Per Ticket Cost</label>
+                            <input
+                                type="number"
+                                min={0}
+                                step="0.01"
+                                value={perPersonCost}
+                                onChange={e => {
+                                    const pp = parseFloat(e.target.value) || 0
+                                    setPerPersonCost(e.target.value)
+                                    setForm(f => ({
+                                        ...f,
+                                        cost: (pp * f.quantity).toFixed(2)
+                                    }))
+                                }}
+                                placeholder="0.00"
+                            />
+                        </div>
+                        <div className="form-group quantity">
                             <label>Quantity</label>
                             <input
                                 type="number"
                                 min={1}
                                 value={form.quantity}
-                                onChange={e => setForm(f => ({ ...f, quantity: parseInt(e.target.value) || 1 }))}
+                                onChange={e => {
+                                    const qty = parseInt(e.target.value) || 1
+                                    setForm(f => ({ ...f, quantity: qty, cost: (parseFloat(perPersonCost) || 0) * qty }))
+                                }}
                             />
                         </div>
                     </div>

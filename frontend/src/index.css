@@ -2588,6 +2588,18 @@ textarea:focus {
     outline: none !important;
 }
 
+.cost-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.88rem;
+}
+
+.quantity {
+    width: 15%;
+    text-align: center;
+}
+
 
 
 

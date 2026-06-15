@@ -46,6 +46,12 @@ const AddStayModal = ({ tripId, cityId, members, tripStartDate, tripEndDate, onC
             isGuest: true
         }))
     ]
+
+    useEffect(() => {
+        if (perPersonCost && form.quantity) {
+            setForm(f => ({ ...f, cost: ((parseFloat(perPersonCost) || 0) * form.quantity).toFixed(2) }))
+        }
+    }, [form.quantity])
         
     useEffect(() => {
         if (addressQuery.length < 3) { setSuggestions([]); return }
@@ -239,16 +245,46 @@ const AddStayModal = ({ tripId, cityId, members, tripStartDate, tripEndDate, onC
                                 endDate={form.checkOut}
                             />
                         </div>
-                        <div className="form-group">
-                            <label>Total Cost</label>
-                            <input
-                                type="number"
-                                min={0}
-                                step="0.01"
-                                value={form.cost}
-                                onChange={e => setForm(f => ({ ...f, cost: e.target.value }))}
-                                placeholder="0.00"
-                            />
+
+                        {/* COST */}
+                                            <div className="form-row cost-row">
+                            <div className="form-group">
+                                <label>Total Cost</label>
+                                <input
+                                    type="number"
+                                    min={0}
+                                    step="0.01"
+                                    value={form.cost}
+                                    onChange={e => {
+                                        const total = parseFloat(e.target.value) || 0
+                                        setForm(f => ({ ...f, cost: e.target.value }))
+                                        setPerPersonCost(
+                                            form.quantity > 1
+                                                ? (total / form.quantity).toFixed(2)
+                                                : e.target.value
+                                        )
+                                    }}
+                                    placeholder="0.00"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Per Unit Cost</label>
+                                <input
+                                    type="number"
+                                    min={0}
+                                    step="0.01"
+                                    value={perPersonCost}
+                                    onChange={e => {
+                                        const pp = parseFloat(e.target.value) || 0
+                                        setPerPersonCost(e.target.value)
+                                        setForm(f => ({
+                                            ...f,
+                                            cost: (pp * f.quantity).toFixed(2)
+                                        }))
+                                    }}
+                                    placeholder="0.00"
+                                />
+                            </div>
                         </div>
                     </div>
 
