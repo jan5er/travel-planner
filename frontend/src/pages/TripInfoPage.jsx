@@ -55,6 +55,8 @@ const TripInfoPage = () => {
     const [pieView, setPieView] = useState('total')
     const [barView, setBarView] = useState('stacked')
     const [selectedPerson, setSelectedPerson] = useState(null)
+    const [activeCategories, setActiveCategories] = useState(new Set(['stays', 'transport', 'attractions', 'misc']))
+
 
     useEffect(() => {
         const fetchData = async () => {
@@ -92,6 +94,19 @@ const TripInfoPage = () => {
         }
     }
 
+    const toggleCategory = (key) => {
+        setActiveCategories(prev => {
+            const next = new Set(prev)
+            if (next.has(key)) {
+                if (next.size === 1) return prev // keep at least one
+                next.delete(key)
+            } else {
+                next.add(key)
+            }
+            return next
+        })
+    }
+
     const handleSaveNote = async (noteId) => {
         try {
             await api.patch(`/trips/${id}/notes/${noteId}`, { title: editTitle, content: editContent })
@@ -121,37 +136,33 @@ const TripInfoPage = () => {
     }
 
     // PREPARE CHART DATA
-    const pieData = expenses ? Object.entries(CATEGORY_LABELS).map(([key, label]) => {
-        const cityExp = cityFilter === 'all' ? expenses.total : expenses.perCity[cityFilter]
-        const totalVal = cityExp?.[key] || 0
-        const myVal = cityFilter === 'all'
-            ? expenses.perCategoryPerPerson?.[key]?.[user?._id] || 0
-            : expenses.perCity[cityFilter]?.perPersonByCategory?.[key]?.[user?._id] || 0
-        return {
-            name: label,
-            key,
-            value: pieView === 'mine' ? myVal : totalVal,
-            color: CATEGORY_COLORS[key]
-        }
-    }).filter(d => d.value > 0) : []
+    const pieData = expenses ? Object.entries(CATEGORY_LABELS)
+        .filter(([key]) => activeCategories.has(key))
+        .map(([key, label]) => {
+            const cityExp = cityFilter === 'all' ? expenses.total : expenses.perCity[cityFilter]
+            const totalVal = cityExp?.[key] || 0
+            const myVal = cityFilter === 'all'
+                ? expenses.perCategoryPerPerson?.[key]?.[user?._id] || 0
+                : expenses.perCity[cityFilter]?.perPersonByCategory?.[key]?.[user?._id] || 0
+            return {
+                name: label,
+                key,
+                value: pieView === 'mine' ? myVal : totalVal,
+                color: CATEGORY_COLORS[key]
+            }
+        }).filter(d => d.value > 0) : []
 
     const barData = expenses ? Object.entries(expenses.perCity).map(([cityId, cityExp]) => {
-        if (selectedPerson) {
-            return {
-                name: cityExp.name,
-                Stays: cityExp.perPersonByCategory?.stays?.[selectedPerson] || 0,
-                Transport: cityExp.perPersonByCategory?.transport?.[selectedPerson] || 0,
-                Attractions: cityExp.perPersonByCategory?.attractions?.[selectedPerson] || 0,
-                Misc: cityExp.perPersonByCategory?.misc?.[selectedPerson] || 0,
+        const row = { name: cityExp.name }
+        Object.entries(CATEGORY_LABELS).forEach(([key, label]) => {
+            if (!activeCategories.has(key)) return
+            if (selectedPerson) {
+                row[label] = cityExp.perPersonByCategory?.[key]?.[selectedPerson] || 0
+            } else {
+                row[label] = cityExp[key] || 0
             }
-        }
-        return {
-            name: cityExp.name,
-            Stays: cityExp.stays || 0,
-            Transport: cityExp.transport || 0,
-            Attractions: cityExp.attractions || 0,
-            Misc: cityExp.misc || 0,
-        }
+        })
+        return row
     }) : []
 
     const lineData = miscByDate ? Object.entries(miscByDate).map(([date, amount]) => ({
@@ -221,9 +232,12 @@ const TripInfoPage = () => {
                                 return (
                                     <div
                                         key={key}
-                                        className={`expense-summary-card ${activeCategory === key ? 'active' : ''}`}
-                                        style={activeCategory === key ? { borderColor: CATEGORY_COLORS[key], boxShadow: `0 0 16px ${CATEGORY_COLORS[key]}30` } : {}}
-                                        onClick={() => setActiveCategory(activeCategory === key ? null : key)}
+                                        className={`expense-summary-card ${activeCategories.has(key) ? 'active' : 'inactive'}`}
+                                        style={activeCategories.has(key) ? { 
+                                            borderColor: CATEGORY_COLORS[key], 
+                                            boxShadow: `0 0 16px ${CATEGORY_COLORS[key]}30` 
+                                        } : { opacity: 0.4 }}
+                                        onClick={() => toggleCategory(key)}
                                     >
                                         <div className="expense-summary-icon" style={{ backgroundColor: `${CATEGORY_COLORS[key]}20`, color: CATEGORY_COLORS[key] }}>
                                             {key === 'stays' ? '🏨' : key === 'transport' ? '✈️' : key === 'attractions' ? '🗺️' : '🍜'}
@@ -349,16 +363,18 @@ const TripInfoPage = () => {
                                         <YAxis tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} tickFormatter={v => `€${v}`} />
                                         <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--accent-glow)' }} />
                                         <Legend formatter={(value) => <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{value}</span>} />
-                                        {Object.entries(CATEGORY_LABELS).map(([key, label], i, arr) => (
-                                            <Bar
-                                                key={key}
-                                                dataKey={label}
-                                                stackId={barView === 'stacked' ? 'a' : undefined}
-                                                fill={CATEGORY_COLORS[key]}
-                                                opacity={activeCategory && activeCategory !== key ? 0.3 : 1}
-                                                radius={barView === 'stacked' && i === arr.length - 1 ? [4, 4, 0, 0] : barView === 'grouped' ? [4, 4, 0, 0] : [0, 0, 0, 0]}
-                                            />
-                                        ))}
+                                        {Object.entries(CATEGORY_LABELS)
+                                            .filter(([key]) => activeCategories.has(key))
+                                            .map(([key, label], i, arr) => (
+                                                <Bar
+                                                    key={key}
+                                                    dataKey={label}
+                                                    stackId={barView === 'stacked' ? 'a' : undefined}
+                                                    fill={CATEGORY_COLORS[key]}
+                                                    radius={barView === 'stacked' && i === arr.length - 1 ? [4,4,0,0] : barView === 'grouped' ? [4,4,0,0] : [0,0,0,0]}
+                                                />
+                                            ))
+                                        }
                                     </BarChart>
                                 </ResponsiveContainer>
                             </div>

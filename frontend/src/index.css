@@ -2583,6 +2583,11 @@ textarea:focus {
     flex-shrink: 0;
 }
 
+.recharts-wrapper:focus,
+.recharts-surface:focus {
+    outline: none !important;
+}
+
 
 
 
