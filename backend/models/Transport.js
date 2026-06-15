@@ -30,6 +30,8 @@ const TransportSchema = new mongoose.Schema({
     note: { type: String, trim: true },
     isConfirmed: { type: Boolean, default: false },
     isReturn: { type: Boolean, default: false },
+    returnDeparture: { type: Date },
+    returnArrival: { type: Date },
 }, { timestamps: true });
 
 const Transport = mongoose.model('Transport', TransportSchema);

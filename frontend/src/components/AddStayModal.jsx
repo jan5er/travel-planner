@@ -24,6 +24,11 @@ const AddStayModal = ({ tripId, cityId, members, tripStartDate, tripEndDate, onC
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
     const debounceRef = useRef(null)
+    const [perPersonCost, setPerPersonCost] = useState(
+        initialData?.cost && initialData?.splitWith?.length
+            ? (initialData.cost / initialData.splitWith.length).toFixed(2)
+            : ''
+    )
 
     const allPeople = [
         ...members.map(m => ({

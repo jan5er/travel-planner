@@ -339,7 +339,7 @@ const TripPage = () => {
                 </div>
             ) : activeCityData ? (
                 <div className="city-content" style={{ 
-                        background: `linear-gradient(165deg, ${activeCityData.color}12 0%, transparent 90%)`,
+                        background: `linear-gradient(180deg, ${activeCityData.color}12 0%, transparent 90%)`,
                         border: `2px solid ${activeCityData.color}`,
                         marginTop: -2
                 }}>

@@ -269,6 +269,42 @@ const TransportPage = () => {
                                     )}
                                 </div>
                             )}
+
+                            {(transport.returnDeparture || transport.returnArrival || transport.isReturn) && (
+                                <div className="transport-times">
+                                    {transport.returnDeparture && transport.returnArrival ? (
+                                        <span className="stay-dates">
+                                            {'<RETURN DEPARTURE> ' + new Date(transport.returnDeparture).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}{' '}
+                                            {'[' + new Date(transport.returnDeparture).toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit' }) + ']'}
+                                            {'-----['}
+                                            {(() => {
+                                                const durationMs = Math.max(0, new Date(transport.returnArrival) - new Date(transport.returnDeparture));
+                                                const totalMinutes = Math.floor(durationMs / 60000);
+                                                const days = Math.floor(totalMinutes / 1440);
+                                                const hours = Math.floor((totalMinutes % 1440) / 60);
+                                                const minutes = totalMinutes % 60;
+
+                                                return [
+                                                    days ? `${days}d` : null,
+                                                    hours ? `${hours}h` : null,
+                                                    minutes ? `${minutes}m` : null,
+                                                ].filter(Boolean).join(' ') || '0m';
+                                            })()}
+                                            {']----->'}
+                                            {'[' + new Date(transport.returnArrival).toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit' }) + '] '}
+                                            {new Date(transport.returnArrival).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' <RETURN ARRIVAL>'}
+                                        </span>
+                                    ) : transport.returnDeparture ? (
+                                        <span className="stay-dates">
+                                            Return Departure: {new Date(transport.returnDeparture).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                    ) : (
+                                        <span className="stay-dates">
+                                            Return Arrival: {new Date(transport.returnArrival).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         {transport.cost > 0 && (

@@ -49,7 +49,6 @@ exports.createTransport = async (req, res) => {
         let finalTripId = req.body.tripId;
         let finalCityId = null;
 
-        // If it's a specific city view, validate and pull tripId from the City document
         if (cityId && cityId !== 'trip') {
             const city = await City.findById(cityId);
             if (!city) return res.status(404).json({ message: 'City not found' });
@@ -78,11 +77,11 @@ exports.createTransport = async (req, res) => {
 
         const transport = new Transport({
             tripId: finalTripId,
-            cityId: finalCityId, // Stores ObjectId or remains null if created on generic trip view
+            cityId: finalCityId, 
             toCityId: toCityId || null,
             fromCityId: fromCityId || null,
-            fromCoordinates: fromCoordinates || null, // Handles custom geocoded coordinates
-            toCoordinates: toCoordinates || null,     // Handles custom geocoded coordinates
+            fromCoordinates: fromCoordinates || null,
+            toCoordinates: toCoordinates || null, 
             type,
             from,
             to,
@@ -94,7 +93,9 @@ exports.createTransport = async (req, res) => {
             quantity,
             note,
             isReturn: isReturn || false,
-            addedBy: req.user._id
+            addedBy: req.user._id,
+            returnDeparture: req.body.returnDeparture || null,
+            returnArrival: req.body.returnArrival || null
         });
 
         await transport.save();
@@ -112,7 +113,6 @@ exports.updateTransport = async (req, res) => {
         const transport = await Transport.findById(req.params.transportId);
         if (!transport) return res.status(404).json({ message: 'Transport not found' });
 
-        // Authorization bypass check via Parent Trip instead of City
         const trip = await Trip.findById(transport.tripId);
         if (!trip) return res.status(404).json({ message: 'Trip not found' });
 
@@ -121,7 +121,7 @@ exports.updateTransport = async (req, res) => {
 
         const allowed = [
             'type', 'from', 'to', 'toCityId', 'fromCityId', 'fromCoordinates', 'toCoordinates',
-            'link', 'departure', 'arrival', 'cost', 'splitWith', 'quantity', 'note', 'isConfirmed', 'isReturn'
+            'link', 'departure', 'arrival', 'cost', 'splitWith', 'quantity', 'note', 'isConfirmed', 'isReturn', 'returnDeparture', 'returnArrival'
         ];
 
         allowed.forEach(field => {

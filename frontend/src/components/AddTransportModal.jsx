@@ -25,6 +25,10 @@ const LocationInput = ({ label, value, onChange, cities, excludeCityId, placehol
     )
 
     useEffect(() => {
+        setQuery(value || '')
+    }, [value])
+
+    useEffect(() => {
         if (query.length < 2) { setSuggestions([]); return }
         clearTimeout(debounceRef.current)
         debounceRef.current = setTimeout(async () => {
@@ -50,7 +54,7 @@ const LocationInput = ({ label, value, onChange, cities, excludeCityId, placehol
         setQuery(name)
         setShowDropdown(false)
         setSuggestions([])
-        onChange(name, cityId, coordinates)
+        onChange(name, cityId, coordinates) 
     }
 
     const showAny = showDropdown && (filteredCities.length > 0 || suggestions.length > 0 || searching)
@@ -65,7 +69,11 @@ const LocationInput = ({ label, value, onChange, cities, excludeCityId, placehol
                     onChange={e => { 
                         setQuery(e.target.value); 
                         setShowDropdown(true); 
-                        onChange(e.target.value, null, null) 
+                        onChange(
+                            e.target.value,
+                            null,
+                            null
+                        )
                     }}
                     onFocus={() => setShowDropdown(true)}
                     onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
@@ -110,13 +118,13 @@ const LocationInput = ({ label, value, onChange, cities, excludeCityId, placehol
     )
 }
 
-const AddTransportModal = ({ tripId, cityId, fromCityId, toCityId, cities, members, tripStartDate, tripEndDate, onClose, onAdded, initialData, guests }) => {
+const AddTransportModal = ({ tripId, cityId, fromCityId, toCityId, cities, members, tripStartDate, tripEndDate, onClose, onAdded, initialData, guests, returnDeparture, returnArrival }) => {
     const [form, setForm] = useState({
         type: initialData?.type || 'flight',
         from: initialData?.from || '',
         to: initialData?.to || '',
-        toCityId: initialData?.toCityId || '',
-        fromCityId: initialData?.fromCityId || '',
+        toCityId: initialData?.toCityId || null,
+        fromCityId: initialData?.fromCityId || null,
         fromCoordinates: initialData?.fromCoordinates || null,
         toCoordinates: initialData?.toCoordinates || null,
         link: initialData?.link || '',
@@ -129,7 +137,9 @@ const AddTransportModal = ({ tripId, cityId, fromCityId, toCityId, cities, membe
             ...members.map(m => m.user._id),
             ...(guests || []).map(g => g._id)
         ],
-        isReturn: initialData?.isReturn || false
+        isReturn: initialData?.isReturn || false,
+        returnDeparture: initialData?.returnDeparture ? new Date(initialData.returnDeparture) : null,
+        returnArrival: initialData?.returnArrival ? new Date(initialData.returnArrival) : null
     })
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
@@ -262,17 +272,6 @@ const AddTransportModal = ({ tripId, cityId, fromCityId, toCityId, cities, membe
                         />
                     </div>
 
-                    <div className="form-group">
-                        <label className="checkbox-label">
-                            <input
-                                type="checkbox"
-                                checked={form.isReturn}
-                                onChange={e => setForm(f => ({ ...f, isReturn: e.target.checked }))}
-                            />
-                            <span style={{ marginLeft: '5%', fontSize: '1rem', paddingTop: '5%' }}>Return trip <span className="optional">(e.g. day trip — comes back to origin)</span></span>
-                        </label>
-                    </div>
-
                     {/* DEPARTURE / ARRIVAL */}
                     <div className="form-row">
                         <div className="form-group">
@@ -304,6 +303,49 @@ const AddTransportModal = ({ tripId, cityId, fromCityId, toCityId, cities, membe
                                 minDate={form.departure || (tripStartDate ? new Date(tripStartDate) : null)}
                                 maxDate={tripEndDate ? new Date(tripEndDate) : null}
                             />
+                        </div>
+                    </div>
+
+                    
+                    {/* RETURN TRIP */}
+                    <div className="form-group">
+                        <div className="form-row">
+                            <div className="form-group">
+                                <label style={{ fontSize: '0.78rem' }}>Return Departure (optional)</label>
+                                <DatePicker
+                                    className="date-input"
+                                    selected={form.returnDeparture}
+                                    onChange={date => setForm(f => ({ 
+                                        ...f, 
+                                        returnDeparture: date,
+                                        isReturn: !!date
+                                    }))}
+                                    dateFormat="dd/MM/yyyy HH:mm"
+                                    showTimeSelect
+                                    timeFormat="HH:mm"
+                                    timeIntervals={15}
+                                    placeholderText="dd/MM/yyyy HH:mm"
+                                    minDate={form.arrival || form.departure || null}
+                                    maxDate={tripEndDate ? new Date(tripEndDate) : null}
+                                    isClearable
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label style={{ fontSize: '0.78rem' }}>Return Arrival (optional)</label>
+                                <DatePicker
+                                    className="date-input"
+                                    selected={form.returnArrival}
+                                    onChange={date => setForm(f => ({ ...f, returnArrival: date }))}
+                                    dateFormat="dd/MM/yyyy HH:mm"
+                                    showTimeSelect
+                                    timeFormat="HH:mm"
+                                    timeIntervals={15}
+                                    placeholderText="dd/MM/yyyy HH:mm"
+                                    minDate={form.returnDeparture || null}
+                                    maxDate={tripEndDate ? new Date(tripEndDate) : null}
+                                    isClearable
+                                />
+                            </div>
                         </div>
                     </div>
 

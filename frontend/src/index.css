@@ -658,7 +658,7 @@ input[type="date"] {
 .city-tab.active {
     background: linear-gradient(
         180deg,
-        color-mix(in srgb, var(--city-color) 20%, transparent) 10%,
+        color-mix(in srgb, var(--city-color) 25%, transparent) 0%,
         transparent 100%
     );
     border-bottom-color: transparent;
@@ -672,7 +672,7 @@ input[type="date"] {
 .city-tab.active:hover {
     background: linear-gradient(
         180deg,
-        color-mix(in srgb, var(--city-color) 20%, transparent) 10%,
+        color-mix(in srgb, var(--city-color) 30%, transparent) 0%,
         transparent 100%
     );
     transition: background 0.3s ease;
